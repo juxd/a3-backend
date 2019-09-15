@@ -29,7 +29,7 @@ user-read-private \
 user-read-email \
 app-remote-control \
 streaming"
-REDIRECT_FRONT_END_URI = "http://localhost:3000"
+REDIRECT_FRONT_END_URI = "http://localhost:3000/signin/callback"
 
 
 @api_view(["GET"])
@@ -74,7 +74,9 @@ def exchange_token(request):
     #TODO: Write to DB
     print(json_data)
 
-    return redirect(REDIRECT_FRONT_END_URI)
+    # WARNING: quick hack to return access token & refresh token in query parameters since there's no user model yet
+    redirect_url = f"{REDIRECT_FRONT_END_URI}?access_token={json_data['access_token']}&expires_in={json_data['expires_in']}&refresh_token={json_data['expires_in']}"
+    return redirect(redirect_url)
 
 
 
