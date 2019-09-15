@@ -9,6 +9,7 @@ name = "pypi"
 django = "*"
 djangorestframework = "*"
 pyflakes = "*"
+requests = "*"
 
 [requires]
-python_version = "3.7"
+python_version = "3.6.8"

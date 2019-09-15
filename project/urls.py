@@ -16,6 +16,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from .app import authorization
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('authorize/new/', authorization.initiate),
+    path('authorize/done/', authorization.exchange_token)
 ]
