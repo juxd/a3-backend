@@ -75,7 +75,7 @@ def exchange_token(request):
     print(json_data)
 
     # WARNING: quick hack to return access token & refresh token in query parameters since there's no user model yet
-    redirect_url = f"{REDIRECT_FRONT_END_URI}?access_token={json_data['access_token']}&expires_in={json_data['expires_in']}&refresh_token={json_data['expires_in']}"
+    redirect_url = f"{REDIRECT_FRONT_END_URI}?access_token={json_data['access_token']}&expires_in={json_data['expires_in']}&refresh_token={json_data['refresh_token']}"
     return redirect(redirect_url)
 
 
