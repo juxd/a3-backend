@@ -7,4 +7,4 @@ class UserSuggestion(Timestampable):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     class Meta:
         db_table = 'user_suggestion'
-        app_label = 'app'
+        app_label = 'room_manager'

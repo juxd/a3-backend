@@ -9,5 +9,5 @@ class User(Timestampable):
     token_issue_time = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        app_label = 'app'
+        app_label = 'room_manager'
         db_table = 'user'

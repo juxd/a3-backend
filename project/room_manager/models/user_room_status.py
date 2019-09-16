@@ -16,5 +16,5 @@ class UserRoomStatus(Timestampable):
     status = models.IntegerField(choices=tuple([(s.value, s.name) for s in RoomStatuses]))
 
     class Meta:
-        app_label = 'app'
+        app_label = 'room_manager'
         db_table = 'user_room'

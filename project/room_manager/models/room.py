@@ -9,7 +9,7 @@ class Room(Timestampable):
     location_longitude = models.DecimalField(max_digits=8, decimal_places=5)
 
     class Meta:
-        app_label = 'app'
+        app_label = 'room_manager'
         db_table = 'room'
 
 
@@ -28,5 +28,5 @@ class RoomQueuedSong(Timestampable):
     track_status = models.PositiveSmallIntegerField(choices=tuple([(s.value, s.name) for s in TrackStatuses]))
 
     class Meta:
-        app_label = 'app'
+        app_label = 'room_manager'
         db_table = 'room_queue'
