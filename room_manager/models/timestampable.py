@@ -8,7 +8,7 @@ class Timestampable(models.Model):
     - timestamp the `updated_at` field on update
     """
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTImeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True

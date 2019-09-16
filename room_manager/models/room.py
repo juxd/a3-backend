@@ -1,6 +1,7 @@
+from enum import Enum
 from django.db import models
-from timestampable import Timestampable
-from user_suggestion import UserSuggestion
+from .timestampable import Timestampable
+from .user_suggestion import UserSuggestion
 
 class Room(Timestampable):
     unique_identifier = models.CharField(max_length=30)
@@ -8,18 +9,15 @@ class Room(Timestampable):
     location_longitude = models.DecimalField(max_digits=8, decimal_places=5)
 
     class Meta:
-        app_name = 'app'
-        table_name = 'room'
+        app_label = 'app'
+        db_table = 'room'
 
 
 class RoomQueuedSong(Timestampable):
-    user_suggestion = models.OneToOne(
-        UserSuggestion,
-        on_delete=Models.CASCADE,
-    )
-    room = models.ForeignKey(Room)
+    user_suggestion = models.OneToOneField(UserSuggestion,on_delete=models.CASCADE)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)
 
-    class TrackStatuses(models.IntegerChoices):
+    class TrackStatuses(Enum):
         NOT_IN_QUEUE = 0
         QUEUED = 1
         CURRENTLY_PLAYING = 2
@@ -27,8 +25,8 @@ class RoomQueuedSong(Timestampable):
 
     votes = models.IntegerField()
     order_in_queue = models.IntegerField()
-    track_status = models.IntegerField(choices=TrackStatuses)
+    track_status = models.PositiveSmallIntegerField(choices=tuple([(s.value, s.name) for s in TrackStatuses]))
 
     class Meta:
-        app_name = 'app'
-        table_name = 'room_queue'
+        app_label = 'app'
+        db_table = 'room_queue'

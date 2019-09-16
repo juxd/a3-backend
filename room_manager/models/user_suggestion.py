@@ -1,6 +1,6 @@
 from django.db import models
-from user import User
-from timestampable import Timestampable
+from .user import User
+from .timestampable import Timestampable
 
 class UserSuggestion(Timestampable):
     track_id = models.CharField(max_length=100, null=False)
