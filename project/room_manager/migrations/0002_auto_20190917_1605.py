@@ -25,12 +25,16 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='user',
             name='last_login',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='last login'),
+            field=models.DateTimeField(blank=True,
+                                       null=True,
+                                       verbose_name='last login'),
         ),
         migrations.AddField(
             model_name='user',
             name='password',
-            field=models.CharField(default='password', max_length=128, verbose_name='password'),
+            field=models.CharField(default='password',
+                                   max_length=128,
+                                   verbose_name='password'),
             preserve_default=False,
         ),
     ]
