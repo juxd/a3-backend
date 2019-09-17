@@ -18,6 +18,8 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '5a6-(-p@_ord35jt(e%c6b7qfu@dq*$k_nt-z63g&6q938e*he'
+CLIENT_ID = os.environ.get('CLIENT_ID')
+CLIENT_SECRET = os.environ.get('CLIENT_SECRET')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

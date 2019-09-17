@@ -63,6 +63,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'project.room_manager.auth.SpotifyBackend'
+]
+
+# Use our own User model for authentication
+AUTH_USER_MODEL = 'room_manager.User'
+
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
