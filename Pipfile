@@ -12,6 +12,7 @@ django = "*"
 requests = "*"
 python-dotenv = "*"
 djangorestframework = "*"
+django-cors-headers = "*"
 
 [requires]
 python_version = "3.7"

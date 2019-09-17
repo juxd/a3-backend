@@ -6,7 +6,7 @@ import json
 """
 Helper methods to access the spotify API
 """
-REDIRECT_URI = "http://127.0.0.1:8000/authorize/done/"
+REDIRECT_URI = "http://127.0.0.1:3000/signin/callback/"
 SPOTIFY_EXCHANGE_URI = "https://accounts.spotify.com/authorize"
 
 SPOTIFY_ALLOWED_SCOPES = { # We can untick/unset some of these more easily later on.
@@ -28,7 +28,7 @@ SPOTIFY_ALLOWED_SCOPES = { # We can untick/unset some of these more easily later
     'app-remote-control'          : True,
     'streaming'                   : True,
 }
-REDIRECT_FRONT_END_URI = "http://localhost:3000/signin/callback"
+REDIRECT_FRONT_END_URI = "http://127.0.0.1:3000/signin/callback"
 
 AUTH_CODE_REQUEST_PARAMS = {
     "client_id": settings.CLIENT_ID,
