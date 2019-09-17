@@ -32,7 +32,7 @@ class User(Timestampable, AbstractBaseUser):
         user.access_token = token_data['access_token']
         user.refresh_token = token_data['refresh_token']
         user.token_issue_time = datetime.now()
-        user.token_token_expires_in = token_data['expires_in']
+        user.token_expires_in = token_data['expires_in']
         user.save()
         return user, created
 
