@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Timestampable(models.Model):
     """
     Base abstract class that would timestamp models on creation.

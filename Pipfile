@@ -4,15 +4,17 @@ verify_ssl = true
 name = "pypi"
 
 [dev-packages]
+yapf = "*"
+pyflakes = "*"
 
 [packages]
 django = "*"
-djangorestframework = "*"
-pyflakes = "*"
 requests = "*"
 python-dotenv = "*"
 channels = "*"
 channels-redis = "*"
+djangorestframework = "*"
+django-cors-headers = "*"
 
 [requires]
-python_version = "3.6"
+python_version = "3.7"

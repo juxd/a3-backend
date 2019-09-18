@@ -11,22 +11,21 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
-
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '5a6-(-p@_ord35jt(e%c6b7qfu@dq*$k_nt-z63g&6q938e*he'
-
+SECRET_KEY = os.environ.get('SECRET_KEY')
+CLIENT_ID = os.environ.get('CLIENT_ID')
+CLIENT_SECRET = os.environ.get('CLIENT_SECRET')
+PATH_TO_FRONTEND = os.environ.get('PATH_TO_FRONTEND')
+CORS_ORIGIN_WHITELIST = [PATH_TO_FRONTEND]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
-
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases

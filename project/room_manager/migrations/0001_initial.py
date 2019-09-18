@@ -8,19 +8,24 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
             name='Room',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id',
+                 models.AutoField(auto_created=True,
+                                  primary_key=True,
+                                  serialize=False,
+                                  verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('unique_identifier', models.CharField(max_length=30)),
-                ('location_latitude', models.DecimalField(decimal_places=5, max_digits=8)),
-                ('location_longitude', models.DecimalField(decimal_places=5, max_digits=8)),
+                ('location_latitude',
+                 models.DecimalField(decimal_places=5, max_digits=8)),
+                ('location_longitude',
+                 models.DecimalField(decimal_places=5, max_digits=8)),
             ],
             options={
                 'db_table': 'room',
@@ -29,14 +34,22 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='User',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id',
+                 models.AutoField(auto_created=True,
+                                  primary_key=True,
+                                  serialize=False,
+                                  verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('display_name', models.CharField(blank=True, max_length=40)),
-                ('token', models.CharField(blank=True, max_length=200, null=True)),
-                ('auth_code', models.CharField(blank=True, max_length=200, null=True)),
-                ('token_validity', models.PositiveIntegerField(blank=True, null=True)),
-                ('token_issue_time', models.DateTimeField(blank=True, null=True)),
+                ('token',
+                 models.CharField(blank=True, max_length=200, null=True)),
+                ('auth_code',
+                 models.CharField(blank=True, max_length=200, null=True)),
+                ('token_validity',
+                 models.PositiveIntegerField(blank=True, null=True)),
+                ('token_issue_time', models.DateTimeField(blank=True,
+                                                          null=True)),
             ],
             options={
                 'db_table': 'user',
@@ -45,11 +58,17 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='UserSuggestion',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id',
+                 models.AutoField(auto_created=True,
+                                  primary_key=True,
+                                  serialize=False,
+                                  verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('track_id', models.CharField(max_length=100)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='room_manager.User')),
+                ('user',
+                 models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                   to='room_manager.User')),
             ],
             options={
                 'db_table': 'user_suggestion',
@@ -58,12 +77,24 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='UserRoomStatus',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id',
+                 models.AutoField(auto_created=True,
+                                  primary_key=True,
+                                  serialize=False,
+                                  verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('status', models.IntegerField(choices=[(0, 'DISCONNECTED'), (1, 'CONNECTED'), (2, 'IDLE')])),
-                ('room', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='room_manager.Room')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='room_manager.User')),
+                ('status',
+                 models.IntegerField(
+                     choices=[(0, 'DISCONNECTED'), (1,
+                                                    'CONNECTED'), (2,
+                                                                   'IDLE')])),
+                ('room',
+                 models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                   to='room_manager.Room')),
+                ('user',
+                 models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                   to='room_manager.User')),
             ],
             options={
                 'db_table': 'user_room',
@@ -72,14 +103,26 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='RoomQueuedSong',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id',
+                 models.AutoField(auto_created=True,
+                                  primary_key=True,
+                                  serialize=False,
+                                  verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('votes', models.IntegerField()),
                 ('order_in_queue', models.IntegerField()),
-                ('track_status', models.PositiveSmallIntegerField(choices=[(0, 'NOT_IN_QUEUE'), (1, 'QUEUED'), (2, 'CURRENTLY_PLAYING'), (3, 'FINISHED_PLAYING')])),
-                ('room', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='room_manager.Room')),
-                ('user_suggestion', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='room_manager.UserSuggestion')),
+                ('track_status',
+                 models.PositiveSmallIntegerField(choices=[(
+                     0, 'NOT_IN_QUEUE'), (1, 'QUEUED'), (
+                         2, 'CURRENTLY_PLAYING'), (3, 'FINISHED_PLAYING')])),
+                ('room',
+                 models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                   to='room_manager.Room')),
+                ('user_suggestion',
+                 models.OneToOneField(
+                     on_delete=django.db.models.deletion.CASCADE,
+                     to='room_manager.UserSuggestion')),
             ],
             options={
                 'db_table': 'room_queue',

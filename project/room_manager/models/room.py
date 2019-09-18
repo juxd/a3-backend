@@ -3,6 +3,7 @@ from django.db import models
 from .timestampable import Timestampable
 from .user_suggestion import UserSuggestion
 
+
 class Room(Timestampable):
     unique_identifier = models.CharField(max_length=30)
     location_latitude = models.DecimalField(max_digits=8, decimal_places=5)
@@ -14,7 +15,8 @@ class Room(Timestampable):
 
 
 class RoomQueuedSong(Timestampable):
-    user_suggestion = models.OneToOneField(UserSuggestion,on_delete=models.CASCADE)
+    user_suggestion = models.OneToOneField(UserSuggestion,
+                                           on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
 
     class TrackStatuses(Enum):
@@ -25,7 +27,8 @@ class RoomQueuedSong(Timestampable):
 
     votes = models.IntegerField()
     order_in_queue = models.IntegerField()
-    track_status = models.PositiveSmallIntegerField(choices=tuple([(s.value, s.name) for s in TrackStatuses]))
+    track_status = models.PositiveSmallIntegerField(
+        choices=tuple([(s.value, s.name) for s in TrackStatuses]))
 
     class Meta:
         app_label = 'room_manager'
