@@ -3,6 +3,7 @@ from channels.generic.websocket import WebsocketConsumer
 import json
 
 class PlaybackConsumer(WebsocketConsumer):
+    
     def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = 'room_%s' % self.room_name
@@ -12,23 +13,12 @@ class PlaybackConsumer(WebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
+
         self.accept()
-        
-        # Send message to WebSocket
-        self.send(text_data=json.dumps({
-            "type":"contentevent",
-            "message": { "id": "123", 
-            "name" : "Name", 
-            "artists" : "Artist", 
-            "album" : "Album", 
-            "isExplicit" : "false", 
-            "imageSource" : "www.example.com",
-            "votes":"9" }
-        }))
-
-
+        self.sendalltracks()
 
     def disconnect(self, close_code):
+
         # Leave room group
         async_to_sync(self.channel_layer.group_discard)(
             self.room_group_name,
@@ -37,24 +27,37 @@ class PlaybackConsumer(WebsocketConsumer):
 
     # Receive message from WebSocket
     def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        message = text_data_json['message']
 
         # Send message to room group
         async_to_sync(self.channel_layer.group_send)(
             self.room_group_name,
-            {
-                'type': 'contentevent',
-                'message': message
-            }
+            text_data
         )
 
-    # Receive message from room group
-    def contentevent(self, event):
-        message = event['message']
+    # Handle content event
+    def contentevent(self, text_data):
 
-        # Send message to WebSocket
+        # Send message to client
+        self.send(text_data)
+
+    # Handle join event
+    def joinevent(self, text_data):
+
+        # Send message to client
+        self.send(text_data)
+
+    # Send all tracks to a client
+    def sendalltracks(self):
+        # TODO: Send existing list of tracks instead of sample track
+
         self.send(text_data=json.dumps({
             "type":"contentevent",
-            "message": message
+            "message": { "id": "123", 
+            "name" : "Name", 
+            "artists" : "Artist", 
+            "album" : "Album", 
+            "isExplicit" : "false", 
+            "imageSource" : "www.example.com",
+            "votes":9 }
         }))
+
