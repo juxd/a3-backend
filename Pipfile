@@ -11,6 +11,8 @@ djangorestframework = "*"
 pyflakes = "*"
 requests = "*"
 python-dotenv = "*"
+channels = "*"
+channels-redis = "*"
 
 [requires]
 python_version = "3.6"

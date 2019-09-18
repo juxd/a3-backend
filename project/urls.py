@@ -16,7 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from .app import authorization
+from .room_manager import authorization
 
 urlpatterns = [
     path('admin/', admin.site.urls),
