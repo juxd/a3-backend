@@ -35,13 +35,13 @@ class PlaybackConsumer(WebsocketConsumer):
         )
 
     # Handle content event
-    def contentevent(self, text_data):
+    def queue_event(self, text_data):
 
         # Send message to client
         self.send(text_data)
 
     # Handle join event
-    def joinevent(self, text_data):
+    def user_event(self, text_data):
 
         # Send message to client
         self.send(text_data)
@@ -51,7 +51,7 @@ class PlaybackConsumer(WebsocketConsumer):
         # TODO: Send existing list of tracks instead of sample track
 
         self.send(text_data=json.dumps({
-            "type":"contentevent",
+            "type":"queue_event",
             "message": { "id": "123", 
             "name" : "Name", 
             "artists" : "Artist", 
