@@ -34,9 +34,6 @@ class PlaybackConsumer(WebsocketConsumer):
             self.channel_name
         )
 
-        for consumer in self.room.user_consumers:
-            print(consumer.user_id)
-
         self.accept()
         self.send_all_tracks()
 
@@ -59,29 +56,29 @@ class PlaybackConsumer(WebsocketConsumer):
 
         data = json.loads(text_data)
         type = data['type']
-        message = data['message']
+        payload = data['payload']
         if (type == 'queue_event'):
-            song = self.room.has_song(message['id'])
-            if (song is not None): song.votes = message['votes']
-            else: self.room.add_track(message)
+            song = self.room.has_song(payload['id'])
+            if (song is not None): song.votes = payload['votes']
+            else: self.room.add_track(payload)
 
         # Send message to room group
         async_to_sync(self.channel_layer.group_send)(
             self.room_group_name,
-            text_data
+            data
         )
 
     # Handle content event
-    def queue_event(self, text_data):
+    def queue_event(self, json_data):
 
-        # Send message to client
-        self.send(text_data)
+        # Send payload to client
+        self.send(text_data=json.dumps(json_data))
 
     # Handle playback event
-    def playback_event(self, text_data):
+    def playback_event(self, json_data):
 
         # Send message to client
-        self.send(text_data)
+        self.send(text_data=json.dumps(json_data))
 
 
     # Send all tracks to a client

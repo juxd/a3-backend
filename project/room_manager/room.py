@@ -56,7 +56,7 @@ class Room:
             self.now_playing = None
             json_data = {
                 'type' : 'playback_event',
-                'message': 'queue empty'
+                'payload': 'queue empty'
             }
         else: 
             song = heapq.heappop(self.queue)
@@ -64,7 +64,7 @@ class Room:
             
             # TODO: Async the following
             # 1. Send request to Spotify to play track
-            Room.play_song_for_users(song, self.users)
+            Room.play_song_for_users(song, self.user_consumers)
 
             # 2. Schedule function to execute when song ends
             thread = threading.Timer(song.duration, self.advance_queue)
@@ -73,7 +73,7 @@ class Room:
             # 3. Broadcast song change to channel layer
             json_data = {
                 'type' : 'playback_event',
-                'message': {
+                'payload': {
                     'id':song.id, 
                     'name' : song.name,
                     'artists' : song.artists,
@@ -84,15 +84,22 @@ class Room:
                 }
             }
         channel_layer = self.user_consumers[0].channel_layer
+
         async_to_sync(channel_layer.group_send)(
             self.room_group_name,
-            json.dumps(json_data)
+            json_data
         )
 
-    @classmethod
-    def play_song_for_users(cls, song, users):
 
-        user_ids = (consumer.user_id for consumer in users)        
+    def has_song(self, song_id):
+        for song in self.queue:
+            if song.id == song_id: return song
+        return None
+
+    @classmethod
+    def play_song_for_users(cls, song, user_consumers):
+
+        user_ids = (consumer.user_id for consumer in user_consumers)        
         token_device_pairs = User.get_device_and_token(user_ids)
 
         # TODO: Make this async
@@ -114,7 +121,7 @@ class Room:
             # TODO: Send message to frontend to reconnect device
             if response.status_code >= 400:
                 # remove user from room
-                users[:] = [consumer for consumer in users if consumer.id != user_id]
+                user_consumers[:] = [consumer for consumer in user_consumers if consumer.id != user_id]
             print(song.id + " played for " + device_id)
 
 
