@@ -4,6 +4,8 @@ import json
 
 from .room import Room
 
+DEBUG = False
+
 # TODO: Cache this with redis
 # {room_id: <Room Object>}
 rooms = {}
@@ -17,6 +19,9 @@ class PlaybackConsumer(WebsocketConsumer):
 
         # TODO: Extract user id from initial request
         self.user_id = '123'
+
+        if DEBUG:
+            print("CLIENT CONNECTED. ROOMS:", rooms)
 
         # TODO: Room creation should be triggered by POST
         if self.room_id not in rooms:
@@ -42,7 +47,7 @@ class PlaybackConsumer(WebsocketConsumer):
         self.room.remove_user(self)
 
         # TODO: Should we destroy room the moment there are no users?
-        if (self.room.is_empty):
+        if (self.room.is_empty()):
             rooms.pop(self.room_id)
 
         # Leave room channel layer
@@ -98,4 +103,7 @@ class PlaybackConsumer(WebsocketConsumer):
                 "votes": 8,
             }
         }))
+
+    def __str__(self):
+        return "User: (ID %s, Room ID %s)" % (self.user_id, self.room_id)
 

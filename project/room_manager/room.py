@@ -10,9 +10,15 @@ import requests as pyrequests
 
 from .models.user import User
 
+DEBUG = False
+
 class Room:
 
     def __init__(self, room_id,  room_group_name, parent):
+
+        if DEBUG:
+            print("ROOM CREATED")
+
         self.room_id = room_id
         self.room_group_name = room_group_name
         self.user_consumers = []
@@ -21,12 +27,17 @@ class Room:
 
     def add_user(self, consumer):
         self.user_consumers.append(consumer)
+        if DEBUG:
+            print("USER ADDED", self.user_consumers)
     
     def remove_user(self, consumer):
         self.user_consumers.remove(consumer)
     
     def is_empty(self):
-        return len(self.user_consumers)
+        if DEBUG:
+            print("IS_EMPTY?", self.user_consumers)
+
+        return len(self.user_consumers) == 0
 
     def add_track(self, song_json):
         duration = Room.get_song_duration(song_json['id'])
