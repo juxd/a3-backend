@@ -52,12 +52,15 @@ class PlaybackConsumer(WebsocketConsumer):
 
         self.send(text_data=json.dumps({
             "type":"queue_event",
-            "message": { "id": "123", 
-            "name" : "Name", 
-            "artists" : "Artist", 
-            "album" : "Album", 
-            "isExplicit" : "false", 
-            "imageSource" : "www.example.com",
-            "votes":9 }
+            "payload": { 
+                "id": "11dFghVXANMlKmJXsNCbNl",
+                "name": "Cut To The Feeling",
+                "artists": ["Carly Rae Jepsen"],
+                "album": "Cut To The Feeling",
+                "isExplicit": False,
+                "imageSource":
+                "https://i.scdn.co/image/107819f5dc557d5d0a4b216781c6ec1b2f3c5ab2",
+                "votes": 8,
+            }
         }))
 
