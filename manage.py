@@ -6,7 +6,7 @@ import dotenv
 
 
 def main():
-    dotenv.load_dotenv(dotenv_path='.env')
+    dotenv.load_dotenv(dotenv_path='../.env')
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project.settings')
     try:
         from django.core.management import execute_from_command_line
