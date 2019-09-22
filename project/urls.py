@@ -18,10 +18,12 @@ from django.urls import path
 
 from .room_manager.rest_endpoints import authorization
 from .room_manager.rest_endpoints import user
+from .room_manager.rest_endpoints import room
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('authorize/new/', authorization.initiate),
     path('authorize/done/', authorization.exchange_token),
     path('user/device/', user.device),
+    path('rooms/', room.create),
 ]
