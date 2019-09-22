@@ -7,5 +7,6 @@ from django.http import JsonResponse
 @api_view(["POST"])
 def create(request):
     if request.method == 'POST':
+        print(request.body)
         # TODO: Create room in backend and return it in roomId
         return JsonResponse({'roomId': '123abc'}, status=201)
