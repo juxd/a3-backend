@@ -23,5 +23,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('authorize/new/', authorization.initiate),
     path('authorize/done/', authorization.exchange_token),
+    path('authorize/refresh/', authorization.refresh_token),
     path('user/device/', user.device),
 ]

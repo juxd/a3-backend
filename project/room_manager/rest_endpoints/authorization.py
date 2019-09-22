@@ -4,7 +4,9 @@ from django.shortcuts import redirect
 from django.http import JsonResponse
 from ..auth import spotify_api as api
 from django.contrib.auth import authenticate
-from ..models.user import UserTokenDataSerializer
+from ..models.user import UserTokenDataSerializer, get_token_for_user
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+import json
 
 
 @api_view(["GET"])
@@ -22,5 +24,17 @@ def exchange_token(request):
         app_tokens = get_token_for_user(user)
         app_tokens['spotify_access_token'] = user.access_token
         app_tokens['spotify_refresh_token'] = user.refresh_token
-        return JsonResponse(get_token_for_user(user))
+        return JsonResponse(app_tokens)
     return JsonResponse({'error': 'Invalid Request'}, status=401)
+
+@api_view(["POST"])
+def refresh_token(request):
+    if settings.DEBUG:
+        print(json.loads(request.body))
+    # Refresh user's token
+    ser = TokenRefreshSerializer(data=json.loads(request.body))
+    ser.is_valid()
+    if settings.DEBUG:
+        print(ser.validated_data)
+    # Check and refresh user's spotify token
+    return JsonResponse(ser.validated_data)
