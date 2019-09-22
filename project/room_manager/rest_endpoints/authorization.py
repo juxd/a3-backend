@@ -9,6 +9,7 @@ from ..auth import spotify_api as api
 from django.contrib.auth import authenticate
 from ..models.user import UserTokenDataSerializer, get_token_for_user
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from ..auth.spotify_api import get_user_info, refresh_token_info
 import json
 import requests as pyrequests
 
@@ -63,31 +64,34 @@ def refresh_token(request: Request) -> JsonResponse:
         return JsonResponse(ser.validated_data)
 
     # Check and refresh user's spotify token
-    headers = {'Authorization': 'Bearer ' + spotify_params['access_token']}
-    response = pyrequests.get('https://api.spotify.com/v1/me', headers=headers)
-    if response.status_code >= 400:
-        params = {
-            'grant_type': 'authorization_code',
-            'client_id': settings.CLIENT_ID,
-            'client_secret': settings.CLIENT_SECRET,
-            'code': spotify_params['refresh_token'],
-            'redirect_uri': 'http://127.0.0.1:3000/'
-        }
-        sresponse = pyrequests.post('https://accounts.spotify.com/api/token',
-                                    params=params)
-        if settings.DEBUG:
-            print(sresponse.text)
-        spotify_params['access_token'] = json.loads(
-            sresponse.text)['access_token']
-        spotify_params['refresh_token'] = json.loads(
-            sresponse.text)['refresh_token']
-    return JsonResponse({
-        'access_token':
-        ser.validated_data['access'],
-        'refresh':
-        body['refresh'],
-        'spotify_access_token':
-        spotify_params['access_token'],
-        'spotify_refresh_token':
-        spotify_params['refresh_token']
-    })
+    try:
+        response = get_user_info(spotify_params)
+        return JsonResponse({
+            'access_token':
+            ser.validated_data['access'],
+            'refresh':
+            body['refresh'],
+            'spotify_access_token':
+            spotify_params['access_token'],
+            'spotify_refresh_token':
+            spotify_params['refresh_token']
+        })
+    except pyrequests.RequestException:
+        pass
+    try:
+        refresh_response = refresh_token_info(spotify_params)
+        spotify_params['access_token'] = refresh_response['access_token']
+        spotify_params['refresh_token'] = refresh_response['refresh_token']
+        return JsonResponse({
+            'access_token':
+            ser.validated_data['access'],
+            'refresh':
+            body['refresh'],
+            'spotify_access_token':
+            spotify_params['access_token'],
+            'spotify_refresh_token':
+            spotify_params['refresh_token']
+        })
+    except pyrequests.RequestException:
+        return JsonResponse({'error': 'Refresh Token is Invalid'},
+                            status_code=401)
