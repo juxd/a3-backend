@@ -19,6 +19,8 @@ def exchange_token(request):
         print(dict(request.query_params))
     user = authenticate(request, **dict(request.query_params))
     if user is not None:
-        serialized_user = UserTokenDataSerializer(user)
-        return JsonResponse(serialized_user.data, status=201)
+        app_tokens = get_token_for_user(user)
+        app_tokens['spotify_access_token'] = user.access_token
+        app_tokens['spotify_refresh_token'] = user.refresh_token
+        return JsonResponse(get_token_for_user(user))
     return JsonResponse({'error': 'Invalid Request'}, status=401)
