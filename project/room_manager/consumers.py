@@ -10,6 +10,7 @@ DEBUG = False
 # {room_id: <Room Object>}
 rooms = {}
 
+
 class PlaybackConsumer(WebsocketConsumer):
     
     def connect(self):
@@ -24,25 +25,22 @@ class PlaybackConsumer(WebsocketConsumer):
 
         # TODO: Room creation should be triggered by POST
         if self.room_id not in rooms:
-            rooms[self.room_id] = Room(self.room_id, 
-                    self.room_group_name, 
-                    rooms)
+            rooms[self.room_id] = Room(self.room_id, self.room_group_name,
+                                       rooms)
         self.room = rooms[self.room_id]
 
         # Add user to room
         self.room.add_user(self)
 
         # Add user to room channel layer
-        async_to_sync(self.channel_layer.group_add)(
-            self.room_group_name,
-            self.channel_name
-        )
+        async_to_sync(self.channel_layer.group_add)(self.room_group_name,
+                                                    self.channel_name)
 
         self.accept()
         self.send_initial_data()
 
     def disconnect(self, close_code):
-        
+
         self.room.remove_user(self)
 
         # TODO: Should we destroy room the moment there are no users?
@@ -50,10 +48,8 @@ class PlaybackConsumer(WebsocketConsumer):
         #     rooms.pop(self.room_id)
 
         # Leave room channel layer
-        async_to_sync(self.channel_layer.group_discard)(
-            self.room_group_name,
-            self.channel_name
-        )
+        async_to_sync(self.channel_layer.group_discard)(self.room_group_name,
+                                                        self.channel_name)
 
     def receive(self, text_data):
 
@@ -144,4 +140,3 @@ class PlaybackConsumer(WebsocketConsumer):
 
     def __str__(self):
         return "User: (ID %s, Room ID %s)" % (self.user_id, self.room_id)
-

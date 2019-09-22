@@ -5,7 +5,7 @@ import heapq
 import base64
 import json
 import threading
-import time 
+import time
 import requests as pyrequests
 
 from .models.user import User
@@ -14,9 +14,9 @@ DEBUG = False
 VOTE_DIRECTION_UP = 'up'
 VOTE_DIRECTION_DOWN = 'down'
 
-class Room:
 
-    def __init__(self, room_id,  room_group_name, parent):
+class Room:
+    def __init__(self, room_id, room_group_name, parent):
 
         if DEBUG: print("ROOM CREATED")
 
@@ -36,7 +36,7 @@ class Room:
     def remove_user(self, consumer):
         
         self.user_consumers.remove(consumer)
-    
+
     def is_empty(self):
 
         return len(self.user_consumers) == 0
@@ -97,7 +97,7 @@ class Room:
             song = heapq.heappop(self.queue)
 
             self.now_playing = song
-            
+
             # TODO: Async the following
             # 1. Send request to Spotify to play track
             Room.play_song_for_users(song, self.user_consumers)
@@ -152,7 +152,7 @@ class Room:
     @classmethod
     def play_song_for_users(cls, song, user_consumers):
 
-        user_ids = (consumer.user_id for consumer in user_consumers)        
+        user_ids = (consumer.user_id for consumer in user_consumers)
         token_device_pairs = User.get_device_and_token(user_ids)
 
         # TODO: Make this async
@@ -163,20 +163,24 @@ class Room:
                 'Authorization': 'Bearer ' + user_token,
             }
 
-            params = (
-                ('device_id', device_id),
-            )
+            params = (('device_id', device_id), )
 
             data = '{"uris":["spotify:track:' + song['id'] + '"]}'
 
-            response = pyrequests.put('https://api.spotify.com/v1/me/player/play', headers=headers, params=params, data=data)
+            response = pyrequests.put(
+                'https://api.spotify.com/v1/me/player/play',
+                headers=headers,
+                params=params,
+                data=data)
 
             # TODO: Send message to frontend to reconnect device
             if response.status_code >= 400:
                 # remove user from room
-                user_consumers[:] = [consumer for consumer in user_consumers if consumer.id != user_id]
+                user_consumers[:] = [
+                    consumer for consumer in user_consumers
+                    if consumer.id != user_id
+                ]
             print(song.id + " played for " + device_id)
-
 
     @classmethod
     def get_song_duration(cls, song_id):
@@ -188,11 +192,14 @@ class Room:
             'Authorization': 'Bearer ' + Room.get_app_token(),
         }
 
-        response = pyrequests.get('https://api.spotify.com/v1/tracks/' + song_id, headers=headers)
-        
+        response = pyrequests.get('https://api.spotify.com/v1/tracks/' +
+                                  song_id,
+                                  headers=headers)
+
         if response.status_code >= 400:
-            raise pyrequests.RequestException('Request for Track Information Failed')
-        
+            raise pyrequests.RequestException(
+                'Request for Track Information Failed')
+
         json_data = json.loads(response.text)
         return json_data['duration_ms']
 
@@ -200,7 +207,8 @@ class Room:
     #   - Schedule refresh rather than get new token everytime?
     @classmethod
     def get_app_token(cls):
-        raw_credentials = '%s:%s' % (settings.CLIENT_ID, settings.CLIENT_SECRET)
+        raw_credentials = '%s:%s' % (settings.CLIENT_ID,
+                                     settings.CLIENT_SECRET)
         encoded_bytes = base64.b64encode(raw_credentials.encode('utf-8'))
         encoded_string = str(encoded_bytes, 'utf-8')
 
@@ -208,11 +216,11 @@ class Room:
             'Authorization': 'Basic ' + encoded_string,
         }
 
-        data = {
-            'grant_type': 'client_credentials'
-        }
+        data = {'grant_type': 'client_credentials'}
 
-        response = pyrequests.post('https://accounts.spotify.com/api/token', headers=headers, data=data)
+        response = pyrequests.post('https://accounts.spotify.com/api/token',
+                                   headers=headers,
+                                   data=data)
         if response.status_code >= 400:
             raise pyrequests.RequestException('App Authorisation Failed')
         data = json.loads(response.text)

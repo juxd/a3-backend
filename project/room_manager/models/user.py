@@ -6,6 +6,7 @@ from .timestampable import Timestampable
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
+
 class User(Timestampable, AbstractBaseUser):
     display_name = models.CharField(max_length=40, null=False, blank=True)
     access_token = models.CharField(max_length=200, null=True, blank=True)
@@ -40,7 +41,8 @@ class User(Timestampable, AbstractBaseUser):
     @classmethod
     def get_device_and_token(cls, user_ids):
         users = cls.objects.filter(identifier=user_ids)
-        return list(users.values_list('identifier', 'access_token', 'device_id'))
+        return list(
+            users.values_list('identifier', 'access_token', 'device_id'))
 
     class Meta:
         app_label = 'room_manager'
@@ -57,10 +59,8 @@ class UserTokenDataSerializer(serializers.ModelSerializer):
         read_only_fields = TOKEN_FIELDS
         fields = TOKEN_FIELDS
 
+
 def get_token_for_user(user):
     refresh = RefreshToken.for_user(user)
 
-    return {
-        'refresh': str(refresh),
-        'access_token': str(refresh.access_token)
-    }
+    return {'refresh': str(refresh), 'access_token': str(refresh.access_token)}
