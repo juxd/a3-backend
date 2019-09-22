@@ -4,7 +4,7 @@ from django.contrib.auth.models import AbstractBaseUser
 from typing import Dict, Tuple, Union
 from .timestampable import Timestampable
 from rest_framework import serializers
-
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class User(Timestampable, AbstractBaseUser):
     display_name = models.CharField(max_length=40, null=False, blank=True)
@@ -56,3 +56,11 @@ class UserTokenDataSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = TOKEN_FIELDS
         fields = TOKEN_FIELDS
+
+def get_token_for_user(user):
+    refresh = RefreshToken.for_user(user)
+
+    return {
+        'refresh': str(refresh),
+        'access_token': str(refresh.access_token)
+    }
