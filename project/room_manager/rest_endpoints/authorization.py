@@ -2,9 +2,9 @@ from rest_framework.decorators import api_view
 from django.conf import settings
 from django.shortcuts import redirect
 from django.http import JsonResponse
-from .auth import spotify_api as api
+from ..auth import spotify_api as api
 from django.contrib.auth import authenticate
-from .models.user import UserTokenDataSerializer
+from ..models.user import UserTokenDataSerializer
 
 
 @api_view(["GET"])

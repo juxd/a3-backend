@@ -15,6 +15,7 @@ class User(Timestampable, AbstractBaseUser):
     token_issue_time = models.DateTimeField(null=True, blank=True)
     identifier = models.CharField(max_length=40, unique=True)
     email = models.EmailField()
+    device_id = models.CharField(max_length=200, null=True, blank=True)
 
     USERNAME_FIELD = 'identifier'
     EMAIL_FIELD = 'email'
@@ -35,6 +36,11 @@ class User(Timestampable, AbstractBaseUser):
         user.token_expires_in = token_data['expires_in']
         user.save()
         return user, created
+
+    @classmethod
+    def get_device_and_token(cls, user_ids):
+        users = cls.objects.filter(identifier=user_ids)
+        return list(users.values_list('identifier', 'access_token', 'device_id'))
 
     class Meta:
         app_label = 'room_manager'
