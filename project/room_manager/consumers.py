@@ -64,13 +64,13 @@ class PlaybackConsumer(WebsocketConsumer):
 
             # Skip sending broadcast if no songs were added to queue
             if added == []: return
-            
+
             data['payload']['songs'] = added
 
         # 2. Vote Action Event: Tally votes in room
         elif type == 'voteActionEvent':
             self.room.vote_songs(self, payload['votes'])
-            
+
             if DEBUG:
                 print(payload['votes'])
 
