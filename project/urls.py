@@ -16,9 +16,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from .room_manager.rest_endpoints import authorization
-from .room_manager.rest_endpoints import user
-from .room_manager.rest_endpoints import room
+from .room_manager.rest_endpoints import (
+    authorization,
+    user,
+    rooms,
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,4 +29,5 @@ urlpatterns = [
     path('authorize/refresh/', authorization.refresh_token),
     path('user/device/', user.device),
     path('rooms/', room.create),
+    path('rooms/', rooms.all_rooms)
 ]

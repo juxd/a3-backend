@@ -2,7 +2,7 @@ from enum import Enum
 from django.db import models
 from .timestampable import Timestampable
 from .user_suggestion import UserSuggestion
-
+from rest_framework import serializers
 
 class Room(Timestampable):
     unique_identifier = models.CharField(max_length=30)
@@ -12,6 +12,12 @@ class Room(Timestampable):
     class Meta:
         app_label = 'room_manager'
         db_table = 'room'
+
+
+class RoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        fields = ['unique_identifier', 'location_latitude', 'location_longitude']
 
 
 class RoomQueuedSong(Timestampable):
