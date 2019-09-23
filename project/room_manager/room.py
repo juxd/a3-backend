@@ -123,6 +123,10 @@ class Room:
 
         return self.now_playing.to_json()
 
+    def has_now_playing(self):
+
+        return self.now_playing is not None
+
 
     @classmethod
     def play_song_for_users(cls, song, user_consumers):

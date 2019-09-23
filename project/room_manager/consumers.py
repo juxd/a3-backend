@@ -125,7 +125,10 @@ class PlaybackConsumer(WebsocketConsumer):
     # Send the current playing song in the room
     def send_now_playing(self):
 
-        data = {'type' : 'queueEvent', 'payload': self.room.get_now_playing() }
+        if self.room.has_now_playing():
+            data = {'type' : 'queueEvent', 'payload': self.room.get_now_playing() }
+        else:
+            data = {'type' : 'queueEvent', 'payload': {} }
 
         self.send(text_data=json.dumps(data))
 
