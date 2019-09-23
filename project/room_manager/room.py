@@ -11,6 +11,8 @@ import requests as pyrequests
 from .models.user import User
 
 DEBUG = False
+VOTE_DIRECTION_UP = 'up'
+VOTE_DIRECTION_DOWN = 'down'
 
 class Room:
 
@@ -77,6 +79,7 @@ class Room:
             else:
                 existing_votes[song_id] = new_vote_direction
                 song.do_vote(new_vote_direction)
+        print(existing_votes)
     
     # Returns the song played
     def advance_queue(self):
@@ -243,14 +246,20 @@ class RoomQueuedSong:
         return json
 
     def do_vote(self, vote_direction):
+        
+        if vote_direction == VOTE_DIRECTION_UP: self.votes += 1
+        if vote_direction == VOTE_DIRECTION_DOWN: self.votes -= 1
 
-        if vote_direction == VoteDirection.UP: self.votes += 1
-        if vote_direction == VoteDirection.DOWN: self.votes -= 1
+        print("do vote")
+        print(vote_direction)
+        print(VOTE_DIRECTION_UP)
+        print(vote_direction == VOTE_DIRECTION_UP)
+        print(self.votes)
 
     def undo_vote(self, vote_direction):
 
-        if vote_direction == VoteDirection.UP: self.do_vote(VoteDirection.DOWN)
-        if vote_direction == VoteDirection.DOWN: self.do_vote(VoteDirection.UP)
+        if vote_direction == VOTE_DIRECTION_UP: self.do_vote(VOTE_DIRECTION_DOWN)
+        if vote_direction == VOTE_DIRECTION_DOWN: self.do_vote(VOTE_DIRECTION_UP)
     
     def __init__(self, id, name, artists, album, is_explicit, image_source, duration, votes):
 
@@ -270,6 +279,6 @@ class RoomQueuedSong:
         return self.id < other.id
 
 
-class VoteDirection(Enum):
-    UP = 'up'
-    DOWN = 'down'
+# class VoteDirection(Enum):
+#     UP = 'up'
+#     DOWN = 'down'
