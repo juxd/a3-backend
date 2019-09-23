@@ -43,17 +43,19 @@ class Room:
 
     # Returns the list of songs added
     def add_songs(self, data):
+
+        added_songs = []
         
         for song_json in data:
             room_queued_song = RoomQueuedSong.from_json(song_json)
-        heapq.heappush(self.queue, room_queued_song)
+            heapq.heappush(self.queue, room_queued_song)
+            added_songs.append(room_queued_song)
         
         if self.now_playing is None: 
             song_played = self.advance_queue()
-            songs_added = [song_json for song_json in data if not song_json['id'] == song_played.id]
-            return songs_added
+            added_songs = [song for song in added_songs if not song.id == song_played.id]
         
-        return data
+        return [song.to_json() for song in added_songs]
     
     def vote_songs(self, consumer, data):
 
