@@ -39,17 +39,27 @@ class Room:
 
         return len(self.user_consumers) == 0
 
+    # Returns the list of songs added
     def add_songs(self, data):
         
         for song_json in data:
             room_queued_song = RoomQueuedSong.from_json(song_json)
         heapq.heappush(self.queue, room_queued_song)
         
-        if self.now_playing is None: self.advance_queue()
+        if self.now_playing is None: 
+            song_played = self.advance_queue()
+            songs_added = [song_json for song_json in data if not song_json['id'] == song_played.id]
+            return songs_added
+        
+        return data
     
     def vote_songs(self, consumer, data):
+
         user_id = consumer.user_id
+
+        if user_id not in self.user_votes: self.user_votes[user_id] = {}
         existing_votes = self.user_votes[user_id]
+
         for new_vote in data:
             song_id = new_vote['id']
             song = self.get_song(song_id)
@@ -67,16 +77,17 @@ class Room:
             else:
                 existing_votes[song_id] = new_vote_direction
                 song.do_vote(new_vote_direction)
-
-        # TODO: Update count in queue
     
+    # Returns the song played
     def advance_queue(self):
+
         if self.queue == []:
             self.now_playing = None
             json_data = {
                 'type' : 'playbackEvent',
                 'payload': {}
             }
+            return None
         else: 
             song = heapq.heappop(self.queue)
 
@@ -103,11 +114,14 @@ class Room:
             json_data
         )
 
+        return self.now_playing
+
     def get_song(self, song_id):
 
         for song in self.queue:
             if song.id  == song_id: return song
-        return None
+        
+        raise RuntimeError("No song with " + str(song_id) + " in queue")
 
     def get_vote_count(self, song_id):
 

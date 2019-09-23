@@ -64,11 +64,17 @@ class PlaybackConsumer(WebsocketConsumer):
         ### HANDLING OF CLIENT EVENTS ###
         # 1. Queue Event: Add songs into room's queue
         if type == 'queueEvent':
-            self.room.add_songs(payload['songs'])
+            added = self.room.add_songs(payload['songs'])
+
+            if added == []: return
+            data['payload']['songs'] = added
 
         # 2. Vote Action Event: Tally votes in room
         elif type == 'voteActionEvent':
             self.room.vote_songs(self, payload['votes'])
+            
+            if DEBUG:
+                print(payload['votes'])
 
             # Convert to vote count event
             songs = []
