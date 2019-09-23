@@ -28,6 +28,6 @@ urlpatterns = [
     path('authorize/done/', authorization.exchange_token),
     path('authorize/refresh/', authorization.refresh_token),
     path('user/device/', user.device),
-    path('rooms/', room.create),
+    path('rooms/new/', rooms.create),
     path('rooms/', rooms.all_rooms)
 ]
