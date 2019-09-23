@@ -44,6 +44,7 @@ class Room:
         for song_json in data:
             room_queued_song = RoomQueuedSong.from_json(song_json)
         heapq.heappush(self.queue, room_queued_song)
+        
         if self.now_playing is None: self.advance_queue()
     
     def vote_songs(self, consumer, data):
@@ -78,6 +79,7 @@ class Room:
             }
         else: 
             song = heapq.heappop(self.queue)
+
             self.now_playing = song
             
             # TODO: Async the following
@@ -224,6 +226,7 @@ class RoomQueuedSong:
         json['imageSource'] = self.image_source
         json['trackDuration'] = self.duration
         json['votes'] = self.votes
+        return json
 
     def do_vote(self, vote_direction):
 
