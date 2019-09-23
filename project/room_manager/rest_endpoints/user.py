@@ -4,7 +4,8 @@ from rest_framework import status
 from django.conf import settings
 from django.http import JsonResponse
 
-@api_view(["GET","POST"])
+
+@api_view(["GET", "POST"])
 def device(request):
     if request.method == 'POST':
         # TODO: Identify user and write to database

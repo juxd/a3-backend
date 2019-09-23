@@ -71,4 +71,21 @@ def get_user_info(token: Dict[str, str]) -> Dict[str, str]:
     return json.loads(response.text)
 
 
+def refresh_token_info(token: Dict[str, str]) -> Dict[str, str]:
+    params = {
+        'grant_type': 'authorization_code',
+        'client_id': settings.CLIENT_ID,
+        'client_secret': settings.CLIENT_SECRET,
+        'code': token['refresh_token'],
+        'redirect_uri': 'http://127.0.0.1:3000/'
+    }
+    sresponse = pyrequests.post('https://accounts.spotify.com/api/token',
+                                params=params)
+    if response.status_code >= 400:
+        raise pyrequests.RequestException('Request Failed')
+    if settings.DEBUG:
+        print(sresponse.text)
+    return json.loads(sresponse.text)
+
+
 #TODO: write decorator for retry pattern.
