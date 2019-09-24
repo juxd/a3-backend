@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.conf import settings
 from django.shortcuts import redirect
 from django.http import JsonResponse
+from rest_framework import status
 from rest_framework.request import Request
 from ..auth import spotify_api as api
 from django.contrib.auth import authenticate
@@ -55,7 +56,8 @@ def refresh_token(request: Request) -> JsonResponse:
     except TokenError:
         # Request is not valid.
         return JsonResponse({'error': 'Refresh Token is Invalid'},
-                            status_code=401)
+                            status=status.HTTP_401_UNAUTHORIZED)
+
     if settings.DEBUG:
         print(ser.validated_data)
     # If this user's credentials doesn't contain spotify credentials, just return it.
@@ -94,4 +96,4 @@ def refresh_token(request: Request) -> JsonResponse:
         })
     except pyrequests.RequestException:
         return JsonResponse({'error': 'Refresh Token is Invalid'},
-                            status_code=401)
+                            status=status.HTTP_401_UNAUTHORIZED)
