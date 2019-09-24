@@ -260,12 +260,6 @@ class RoomQueuedSong:
         if vote_direction == VOTE_DIRECTION_UP: self.votes += 1
         if vote_direction == VOTE_DIRECTION_DOWN: self.votes -= 1
 
-        print("do vote")
-        print(vote_direction)
-        print(VOTE_DIRECTION_UP)
-        print(vote_direction == VOTE_DIRECTION_UP)
-        print(self.votes)
-
     def undo_vote(self, vote_direction):
 
         if vote_direction == VOTE_DIRECTION_UP: self.do_vote(VOTE_DIRECTION_DOWN)
