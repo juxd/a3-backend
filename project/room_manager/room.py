@@ -113,7 +113,7 @@ class Room:
             }
         
         # 3. Broadcast song change to channel layer
-        if not len(self.user_votes) == 0:
+        if len(self.user_consumers) > 0:
             channel_layer = self.user_consumers[0].channel_layer
 
             async_to_sync(channel_layer.group_send)(
