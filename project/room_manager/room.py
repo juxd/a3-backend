@@ -14,7 +14,6 @@ DEBUG = False
 VOTE_DIRECTION_UP = 'up'
 VOTE_DIRECTION_DOWN = 'down'
 
-
 class Room:
     def __init__(self, room_id, room_group_name, parent):
 
@@ -85,24 +84,27 @@ class Room:
     # Returns the song played
     def advance_queue(self):
 
+        song_played = None
+
         if self.queue == []:
             self.now_playing = None
             json_data = {
                 'type' : 'playbackEvent',
                 'payload': {}
             }
-            return None
-        else: 
-            song = heapq.heappop(self.queue)
 
-            self.now_playing = song
+        else: 
+            song_played = heapq.heappop(self.queue)
+
+            self.now_playing = song_played
 
             # TODO: Async the following
             # 1. Send request to Spotify to play track
-            Room.play_song_for_users(song, self.user_consumers)
+            Room.play_song_for_users(song_played, self.user_consumers)
 
             # 2. Schedule function to execute when song ends
-            thread = threading.Timer(song.duration, self.advance_queue)
+            thread = threading.Timer(song_played.duration/1000 - 1, self.advance_queue)
+            thread.daemon = False
             thread.start()
 
             json_data = {
@@ -111,14 +113,15 @@ class Room:
             }
         
         # 3. Broadcast song change to channel layer
-        channel_layer = self.user_consumers[0].channel_layer
+        if not len(self.user_votes) == 0:
+            channel_layer = self.user_consumers[0].channel_layer
 
-        async_to_sync(channel_layer.group_send)(
-            self.room_group_name,
-            json_data
-        )
+            async_to_sync(channel_layer.group_send)(
+                self.room_group_name,
+                json_data
+            )
 
-        return self.now_playing
+        return song_played
 
     def get_song(self, song_id):
 
@@ -151,6 +154,10 @@ class Room:
     @classmethod
     def play_song_for_users(cls, song, user_consumers):
 
+        print("Play " + str(song) + " for users")
+
+        # user_id = 'afterdusk'
+        # token_device_pairs = [(user_id, 'BQDPEVkUJ9e2OYOHFa6VI4P2eNzPpdUvji7r1K-v9c78JuSxvhhQAaLX7r5Di2m8hSAlMRaw74a8d-_ajaVB_-W_rTya8iiTwo9zVU336-EcOUvJ8FrmF2nSAasgBkdZ2bRI5meSeHwOAM20gIIpRthHGsPZCQSUgGXR-eRwXq7UK1AD9SclVhUX9WwalyxQldcMy7IDpJAdpaRwyiaqArAptaJ0G8vSKt13TZZoCVGnCkSOTPHnBEo00nlXJiYnmD0iMscpROVqp74',"3a8c1aba224619c9c48c2ce4f7462d87dac2e5b5")]
         user_ids = (consumer.user_id for consumer in user_consumers)
         token_device_pairs = User.get_device_and_token(user_ids)
 
@@ -164,7 +171,7 @@ class Room:
 
             params = (('device_id', device_id), )
 
-            data = '{"uris":["spotify:track:' + song['id'] + '"]}'
+            data = '{"uris":["spotify:track:' + song.id + '"]}'
 
             response = pyrequests.put(
                 'https://api.spotify.com/v1/me/player/play',
@@ -174,12 +181,13 @@ class Room:
 
             # TODO: Send message to frontend to reconnect device
             if response.status_code >= 400:
+                print(response.text)
                 # remove user from room
                 user_consumers[:] = [
                     consumer for consumer in user_consumers
-                    if consumer.id != user_id
+                    if consumer.user_id != user_id
                 ]
-            print(song.id + " played for " + device_id)
+            print(song.id + " played")
 
     @classmethod
     def get_song_duration(cls, song_id):
