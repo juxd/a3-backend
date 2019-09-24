@@ -6,7 +6,9 @@ import json
 
 from .room import Room
 
-DEBUG = False
+from .models.room import Room as RoomModel
+
+DEBUG = True
 
 # TODO: Cache this with redis
 # {room_id: <Room Object>}
@@ -17,39 +19,45 @@ class PlaybackConsumer(WebsocketConsumer):
     
     def connect(self):
 
+        self.is_valid = False
         self.room_id = self.scope['url_route']['kwargs']['room_id']
         self.room_group_name = 'room_%s' % self.room_id
 
+        # 1. Verify that room exists. If yes, get or create in-memory room
+        if self.room_id not in rooms:
+            if RoomModel.exists(self.room_id):
+                rooms[self.room_id] = Room(self.room_id, self.room_group_name,
+                                        rooms)
+            else:
+                self.close(404)
+                return
+
+        self.room = rooms[self.room_id]
         
+        # 2. Verify JWT token and get user identity
         query_string = self.scope['query_string'].decode("utf-8")
         access_token = parse.parse_qs(query_string)['access_token'][0]
-        print("access token ", access_token)
 
         try:
             self.user_id = AccessToken(access_token).get('user_id')
         except TokenError:
             self.close(401)
+            return
 
-        if DEBUG:
-            print("CLIENT CONNECTED. ROOMS:", rooms)
-
-        # TODO: Room creation should be triggered by POST
-        if self.room_id not in rooms:
-            rooms[self.room_id] = Room(self.room_id, self.room_group_name,
-                                       rooms)
-        self.room = rooms[self.room_id]
-
-        # Add user to room
+        # 3. Add user to room and broadcast to channel layer
         self.room.add_user(self)
-
-        # Add user to room channel layer
         async_to_sync(self.channel_layer.group_add)(self.room_group_name,
                                                     self.channel_name)
-
+        
+        # 4. Accept connection and send initial data
+        self.is_valid = True
         self.accept()
         self.send_initial_data()
 
     def disconnect(self, close_code):
+
+        if not self.is_valid:
+            return
 
         self.room.remove_user(self)
 

@@ -187,27 +187,6 @@ class Room:
                     if consumer.user_id != user_id
                 ]
 
-    @classmethod
-    def get_song_duration(cls, song_id):
-
-        # TODO: Throw exception if room and id not set
-        headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + Room.get_app_token(),
-        }
-
-        response = pyrequests.get('https://api.spotify.com/v1/tracks/' +
-                                  song_id,
-                                  headers=headers)
-
-        if response.status_code >= 400:
-            raise pyrequests.RequestException(
-                'Request for Track Information Failed')
-
-        json_data = json.loads(response.text)
-        return json_data['duration_ms']
-
     # TODO: Flesh this out into a proper flow inside spotify_api
     #   - Schedule refresh rather than get new token everytime?
     @classmethod
@@ -280,8 +259,3 @@ class RoomQueuedSong:
     def __lt__(self, other):
         if self.votes < other.votes: return True
         return self.id < other.id
-
-
-# class VoteDirection(Enum):
-#     UP = 'up'
-#     DOWN = 'down'
