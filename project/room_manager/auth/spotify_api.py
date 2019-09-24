@@ -45,7 +45,6 @@ def _b64encoded(client_id: str, client_secret: str) -> str:
     raw_credentials = '%s:%s' % (client_id, client_secret)
     encoded_bytes = base64.b64encode(raw_credentials.encode('utf-8'))
     encoded_string = str(encoded_bytes, 'utf-8')
-    print('encoded', encoded_string)
     return encoded_string
 
 ENCODED_CREDENTIALS = _b64encoded(settings.CLIENT_ID, settings.CLIENT_SECRET)
