@@ -66,6 +66,7 @@ class Room:
         for new_vote in data:
             song_id = new_vote['id']
             song = self.get_song(song_id)
+            
             new_vote_direction = new_vote['voteDirection']
 
             # User voted on song before
@@ -80,6 +81,8 @@ class Room:
             else:
                 existing_votes[song_id] = new_vote_direction
                 song.do_vote(new_vote_direction)
+            
+            heapq.heapify(self.queue)
     
     # Returns the song played
     def advance_queue(self):
@@ -154,10 +157,6 @@ class Room:
     @classmethod
     def play_song_for_users(cls, song, user_consumers):
 
-        print("Play " + str(song) + " for users")
-
-        # user_id = 'afterdusk'
-        # token_device_pairs = [(user_id, 'BQDPEVkUJ9e2OYOHFa6VI4P2eNzPpdUvji7r1K-v9c78JuSxvhhQAaLX7r5Di2m8hSAlMRaw74a8d-_ajaVB_-W_rTya8iiTwo9zVU336-EcOUvJ8FrmF2nSAasgBkdZ2bRI5meSeHwOAM20gIIpRthHGsPZCQSUgGXR-eRwXq7UK1AD9SclVhUX9WwalyxQldcMy7IDpJAdpaRwyiaqArAptaJ0G8vSKt13TZZoCVGnCkSOTPHnBEo00nlXJiYnmD0iMscpROVqp74',"3a8c1aba224619c9c48c2ce4f7462d87dac2e5b5")]
         user_ids = (consumer.user_id for consumer in user_consumers)
         token_device_pairs = User.get_device_and_token(user_ids)
 
@@ -187,7 +186,6 @@ class Room:
                     consumer for consumer in user_consumers
                     if consumer.user_id != user_id
                 ]
-            print(song.id + " played")
 
     @classmethod
     def get_song_duration(cls, song_id):
