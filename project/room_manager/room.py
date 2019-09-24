@@ -16,48 +16,41 @@ VOTE_DIRECTION_DOWN = 'down'
 
 class Room:
     def __init__(self, room_id, room_group_name, parent):
-
-        if DEBUG: print("ROOM CREATED")
-
         self.room_id = room_id
         self.room_group_name = room_group_name
         self.user_consumers = []
-        self.user_votes = {} # {user_id : {song_id, direction}}
-        self.queue = []
+        self.user_votes = {}  # {user_id : {song_id:direction}}
+        self.queue = SongHeap()
         self.now_playing = None
 
     def add_user(self, consumer):
-
-        if DEBUG: print("USER ADDED", self.user_consumers)
-
         self.user_consumers.append(consumer)
-    
+
     def remove_user(self, consumer):
-        
         self.user_consumers.remove(consumer)
 
     def is_empty(self):
-
         return len(self.user_consumers) == 0
 
     # Returns the list of songs added
     def add_songs(self, data):
-
         added_songs = []
-        
+
         for song_json in data:
             room_queued_song = RoomQueuedSong.from_json(song_json)
-            heapq.heappush(self.queue, room_queued_song)
+            self.queue.push(room_queued_song)
             added_songs.append(room_queued_song)
-        
-        if self.now_playing is None: 
-            song_played = self.advance_queue()
-            added_songs = [song for song in added_songs if not song.id == song_played.id]
-        
-        return [song.to_json() for song in added_songs]
-    
-    def vote_songs(self, consumer, data):
 
+        if self.now_playing is None:
+            song_played = self.advance_queue()
+            if song_played is not None:
+                added_songs = [
+                    song for song in added_songs if not song.id == song_played.id
+                ]
+
+        return [song.to_json() for song in added_songs]
+
+    def vote_songs(self, consumer, data):
         user_id = consumer.user_id
 
         if user_id not in self.user_votes: self.user_votes[user_id] = {}
@@ -76,20 +69,19 @@ class Room:
                 if new_vote_direction != existing_vote_direction:
                     existing_votes[song_id] = new_vote_direction
                     song.do_vote(new_vote_direction)
-            
+
             # User has not voted on song before
             else:
                 existing_votes[song_id] = new_vote_direction
                 song.do_vote(new_vote_direction)
             
-            heapq.heapify(self.queue)
+            self.queue.update(song)
     
     # Returns the song played
     def advance_queue(self):
-
         song_played = None
 
-        if self.queue == []:
+        if self.queue.is_empty():
             self.now_playing = None
             json_data = {
                 'type' : 'playbackEvent',
@@ -97,8 +89,7 @@ class Room:
             }
 
         else: 
-            song_played = heapq.heappop(self.queue)
-
+            song_played = self.queue.pop()
             self.now_playing = song_played
 
             # TODO: Async the following
@@ -111,10 +102,10 @@ class Room:
             thread.start()
 
             json_data = {
-                'type' : 'playbackEvent',
+                'type': 'playbackEvent',
                 'payload': self.now_playing.to_json()
             }
-        
+
         # 3. Broadcast song change to channel layer
         if len(self.user_consumers) > 0:
             channel_layer = self.user_consumers[0].channel_layer
@@ -123,42 +114,51 @@ class Room:
                 self.room_group_name,
                 json_data
             )
+        
+        # 4. Remove user votes for the newly played song
+        if song_played is not None: 
+            for _, votes in self.user_votes.items():
+                if song_played.id in votes: votes.pop(song_played.id)
+
 
         return song_played
 
     def get_song(self, song_id):
-
-        for song in self.queue:
-            if song.id  == song_id: return song
-        
-        raise RuntimeError("No song with " + str(song_id) + " in queue")
-
-    def get_vote_count(self, song_id):
-
-        for song in self.queue:
-            if song.id == song_id: return song.votes
-        return -1
+        song = self.queue.get_song_by_id(song_id)
+        if song is not None: 
+            return song
+        else:
+            raise RuntimeError("No song with " + str(song_id) + " in queue")
 
     def get_queue(self):
+        return [song.to_json() for song in self.queue.get_all_songs()]
 
-        data = []
-        for room_queued_song in self.queue: data.append(room_queued_song.to_json())
-        return data
+    def get_vote_count(self, song_id):
+        song = self.queue.get_song_by_id(song_id)
+        if song is not None: 
+            return song.votes
+        else:
+            raise RuntimeError("No song with " + str(song_id) + " in queue")
+    
+    def get_user_votes(self, user_id):
+        # Input shape: {user_id : {song_id: direction}}
+        # Output shape: [{'id': song_id, 'voteDirection':direction}]
+        if user_id not in self.user_votes:
+            return []
+        votes = [{'id':song_id, 'voteDirection':direction} for song_id, direction in self.user_votes[user_id].items()]
+        return votes
 
     def get_now_playing(self):
-
         return self.now_playing.to_json()
 
     def has_now_playing(self):
-
         return self.now_playing is not None
-
 
     @classmethod
     def play_song_for_users(cls, song, user_consumers):
-
-        user_ids = (consumer.user_id for consumer in user_consumers)
+        user_ids = [consumer.user_id for consumer in user_consumers]
         token_device_pairs = User.get_device_and_token(user_ids)
+        # print(token_device_pairs)
 
         # TODO: Make this async
         for user_id, user_token, device_id in token_device_pairs:
@@ -212,18 +212,12 @@ class Room:
 
 
 class RoomQueuedSong:
-
     @classmethod
     def from_json(cls, json):
-        return RoomQueuedSong(
-            json['id'], 
-            json['name'],
-            json['artists'],
-            json['album'],
-            json['isExplicit'],
-            json['imageSource'],
-            json['trackDuration'],
-            json.get('votes', 0))
+        return RoomQueuedSong(json['id'], json['name'], json['artists'],
+                              json['album'], json['isExplicit'],
+                              json['imageSource'], json['trackDuration'],
+                              json.get('votes', 0))
 
     def to_json(self):
         json = {}
@@ -242,10 +236,13 @@ class RoomQueuedSong:
         if vote_direction == VOTE_DIRECTION_DOWN: self.votes -= 1
 
     def undo_vote(self, vote_direction):
-        if vote_direction == VOTE_DIRECTION_UP: self.do_vote(VOTE_DIRECTION_DOWN)
-        if vote_direction == VOTE_DIRECTION_DOWN: self.do_vote(VOTE_DIRECTION_UP)
+        if vote_direction == VOTE_DIRECTION_UP:
+            self.do_vote(VOTE_DIRECTION_DOWN)
+        if vote_direction == VOTE_DIRECTION_DOWN:
+            self.do_vote(VOTE_DIRECTION_UP)
 
-    def __init__(self, id, name, artists, album, is_explicit, image_source, duration, votes):
+    def __init__(self, id, name, artists, album, is_explicit, image_source,
+                 duration, votes):
         self.id = id
         self.name = name
         self.artists = artists
@@ -259,3 +256,30 @@ class RoomQueuedSong:
     def __lt__(self, other):
         if self.votes < other.votes: return True
         return self.id < other.id
+
+class SongHeap(object):
+    def __init__(self):
+       self.key = lambda song: (-song.votes)
+       self._data = []
+
+    def push(self, song):
+        heapq.heappush(self._data, (self.key(song), song))
+
+    def pop(self):
+        return heapq.heappop(self._data)[1]
+
+    def update(self, song):
+        self._data = [(key, x) if x.id != song.id else (self.key(song), song) for (key, x) in self._data]
+        heapq.heapify(self._data)
+
+    def is_empty(self):
+        return len(self._data) == 0
+
+    def get_song_by_id(self, song_id):
+        for _, x in self._data:
+            if x.id == song_id: return x
+        return None
+
+    def get_all_songs(self):
+        return [x for (key, x) in self._data]
+

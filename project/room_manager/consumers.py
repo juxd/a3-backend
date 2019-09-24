@@ -8,7 +8,7 @@ from .room import Room
 
 from .models.room import Room as RoomModel
 
-DEBUG = True
+DEBUG = False
 
 # TODO: Cache this with redis
 # {room_id: <Room Object>}
@@ -16,9 +16,8 @@ rooms = {}
 
 
 class PlaybackConsumer(WebsocketConsumer):
-    
-    def connect(self):
 
+    def connect(self):
         self.is_valid = False
         self.room_id = self.scope['url_route']['kwargs']['room_id']
         self.room_group_name = 'room_%s' % self.room_id
@@ -40,7 +39,8 @@ class PlaybackConsumer(WebsocketConsumer):
 
         try:
             self.user_id = AccessToken(access_token).get('user_id')
-        except TokenError:
+        except TokenError as e:
+            print(e)
             self.close(401)
             return
 
@@ -55,7 +55,6 @@ class PlaybackConsumer(WebsocketConsumer):
         self.send_initial_data()
 
     def disconnect(self, close_code):
-
         if not self.is_valid:
             return
 
@@ -70,7 +69,6 @@ class PlaybackConsumer(WebsocketConsumer):
                                                         self.channel_name)
 
     def receive(self, text_data):
-
         data = json.loads(text_data)
         type = data['type']
         payload = data['payload']
@@ -89,68 +87,66 @@ class PlaybackConsumer(WebsocketConsumer):
         elif type == 'voteActionEvent':
             self.room.vote_songs(self, payload['votes'])
 
-            if DEBUG:
-                print(payload['votes'])
-
             # Convert to vote count event
             songs = []
             for vote in payload['votes']:
                 id = vote['id']
-                song = {'id':id, 'votes': self.room.get_vote_count(id)}
+                song = {'id': id, 'votes': self.room.get_vote_count(id)}
                 songs.append(song)
-            data = {'type':'voteCountEvent', 'payload' : {'songs': songs}}
+            data = {'type': 'voteCountEvent', 'payload': {'songs': songs}}
 
         # Propagate message to room channel layer
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name,
-            data
-        )
+        async_to_sync(self.channel_layer.group_send)(self.room_group_name,
+                                                     data)
 
     ### HANDLING OF CHANNEL LAYER EVENTS ###
     # 1. Queue Event: Notify clients of new queue songs
     def queueEvent(self, json_data):
-
         self.send(text_data=json.dumps(json_data))
 
     # 2. Playback Event: Notify clients of new now playing song
     def playbackEvent(self, json_data):
-
         self.send(text_data=json.dumps(json_data))
 
     # 3. Vote Event: Notify clients of new vote counts
     def voteCountEvent(self, json_data):
-
         self.send(text_data=json.dumps(json_data))
-
 
     ### HELPER FUNCTIONS ###
 
     def send_initial_data(self):
-        
         self.send_queue()
         self.send_user_votes()
         self.send_now_playing()
 
     # Send all songs to a client
     def send_queue(self):
-
-        data = {'type' : 'queueEvent', 'payload':{'songs' : self.room.get_queue() }}
+        data = {
+            'type': 'queueEvent',
+            'payload': {
+                'songs': self.room.get_queue()
+            }
+        }
 
         self.send(text_data=json.dumps(data))
 
     # Send a user's previous votes
     def send_user_votes(self):
-
-        # TODO
-        pass
+        data = {
+            'type': 'voteActionEvent',
+            'payload': self.room.get_user_votes(self.user_id)
+        }
+        self.send(text_data=json.dumps(data))
 
     # Send the current playing song in the room
     def send_now_playing(self):
-
         if self.room.has_now_playing():
-            data = {'type' : 'playbackEvent', 'payload': self.room.get_now_playing() }
+            data = {
+                'type': 'playbackEvent',
+                'payload': self.room.get_now_playing()
+            }
         else:
-            data = {'type' : 'playbackEvent', 'payload': {} }
+            data = {'type': 'playbackEvent', 'payload': {}}
 
         self.send(text_data=json.dumps(data))
 

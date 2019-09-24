@@ -40,9 +40,13 @@ class User(Timestampable, AbstractBaseUser):
 
     @classmethod
     def get_device_and_token(cls, user_ids):
-        users = cls.objects.filter(identifier=user_ids)
+        users = cls.objects.filter(identifier__in=user_ids)
         return list(
             users.values_list('identifier', 'access_token', 'device_id'))
+
+    def set_device_id(self, new_id):
+        self.device_id = new_id
+        self.save()
 
     class Meta:
         app_label = 'room_manager'
@@ -58,6 +62,12 @@ class UserTokenDataSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = TOKEN_FIELDS
         fields = TOKEN_FIELDS
+
+
+class UserDeviceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['device_id']
 
 
 def get_token_for_user(user):
