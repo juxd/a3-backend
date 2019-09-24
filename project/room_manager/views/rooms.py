@@ -5,6 +5,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 
+
 class RoomViewSet(viewsets.ModelViewSet):
     """
     ViewSets are analagous to Rails controllers.

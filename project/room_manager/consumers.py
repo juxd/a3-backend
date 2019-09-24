@@ -16,7 +16,6 @@ rooms = {}
 
 
 class PlaybackConsumer(WebsocketConsumer):
-
     def connect(self):
         self.is_valid = False
         self.room_id = self.scope['url_route']['kwargs']['room_id']
