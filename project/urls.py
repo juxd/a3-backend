@@ -14,13 +14,16 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
-
-from .room_manager.rest_endpoints import (
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .room_manager.views import (
     authorization,
     user,
-    rooms,
+    RoomViewSet
 )
+
+router = DefaultRouter()
+router.register(r'rooms', RoomViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,6 +31,5 @@ urlpatterns = [
     path('authorize/done/', authorization.exchange_token),
     path('authorize/refresh/', authorization.refresh_token),
     path('user/device/', user.device),
-    path('rooms/new/', rooms.create),
-    path('rooms/', rooms.all_rooms)
+    path('', include(router.urls))
 ]

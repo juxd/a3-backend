@@ -3,11 +3,18 @@ from django.db import models
 from .timestampable import Timestampable
 from .user_suggestion import UserSuggestion
 from rest_framework import serializers
+import uuid
 
 class Room(Timestampable):
-    unique_identifier = models.CharField(max_length=30)
-    location_latitude = models.DecimalField(max_digits=8, decimal_places=5)
-    location_longitude = models.DecimalField(max_digits=8, decimal_places=5)
+    def generate_id():
+        return str(uuid.uuid4())[:5]
+
+
+    unique_identifier = models.CharField(max_length=5, unique=True,
+                                         default=generate_id)
+    location_latitude = models.DecimalField(max_digits=8, decimal_places=5, null=True)
+    location_longitude = models.DecimalField(max_digits=8, decimal_places=5, null=True)
+    name = models.CharField(max_length=30, null=False)
 
     class Meta:
         app_label = 'room_manager'
@@ -17,7 +24,8 @@ class Room(Timestampable):
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
-        fields = ['unique_identifier', 'location_latitude', 'location_longitude']
+        fields = ['name', 'unique_identifier', 'location_latitude', 'location_longitude']
+        read_only_fields = ['unique_identifier']
 
 
 class RoomQueuedSong(Timestampable):
