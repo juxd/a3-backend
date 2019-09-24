@@ -20,16 +20,23 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='room',
             name='location_latitude',
-            field=models.DecimalField(decimal_places=5, max_digits=8, null=True),
+            field=models.DecimalField(decimal_places=5,
+                                      max_digits=8,
+                                      null=True),
         ),
         migrations.AlterField(
             model_name='room',
             name='location_longitude',
-            field=models.DecimalField(decimal_places=5, max_digits=8, null=True),
+            field=models.DecimalField(decimal_places=5,
+                                      max_digits=8,
+                                      null=True),
         ),
         migrations.AlterField(
             model_name='room',
             name='unique_identifier',
-            field=models.CharField(default=project.room_manager.models.room.Room.generate_id, max_length=5, unique=True),
+            field=models.CharField(
+                default=project.room_manager.models.room.Room.generate_id,
+                max_length=5,
+                unique=True),
         ),
     ]

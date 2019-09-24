@@ -12,7 +12,6 @@ rooms = {}
 
 
 class PlaybackConsumer(WebsocketConsumer):
-    
     def connect(self):
         self.room_id = self.scope['url_route']['kwargs']['room_id']
         self.room_group_name = 'room_%s' % self.room_id
@@ -78,17 +77,15 @@ class PlaybackConsumer(WebsocketConsumer):
             songs = []
             for vote in payload['votes']:
                 id = vote['id']
-                song = {'id':id, 'votes': self.room.get_vote_count(id)}
+                song = {'id': id, 'votes': self.room.get_vote_count(id)}
                 songs.append(song)
-            data = {'type':'voteCountEvent', 'payload' : {'songs': songs}}
+            data = {'type': 'voteCountEvent', 'payload': {'songs': songs}}
 
             print(data)
 
         # Propagate message to room channel layer
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name,
-            data
-        )
+        async_to_sync(self.channel_layer.group_send)(self.room_group_name,
+                                                     data)
 
     ### HANDLING OF CHANNEL LAYER EVENTS ###
     # 1. Queue Event: Notify clients of new queue songs
@@ -106,11 +103,10 @@ class PlaybackConsumer(WebsocketConsumer):
 
         self.send(text_data=json.dumps(json_data))
 
-
     ### HELPER FUNCTIONS ###
 
     def send_initial_data(self):
-        
+
         self.send_queue()
         self.send_user_votes()
         self.send_now_playing()
@@ -118,7 +114,12 @@ class PlaybackConsumer(WebsocketConsumer):
     # Send all songs to a client
     def send_queue(self):
 
-        data = {'type' : 'queueEvent', 'payload':{'songs' : self.room.get_queue() }}
+        data = {
+            'type': 'queueEvent',
+            'payload': {
+                'songs': self.room.get_queue()
+            }
+        }
 
         self.send(text_data=json.dumps(data))
 
@@ -132,9 +133,12 @@ class PlaybackConsumer(WebsocketConsumer):
     def send_now_playing(self):
 
         if self.room.has_now_playing():
-            data = {'type' : 'playbackEvent', 'payload': self.room.get_now_playing() }
+            data = {
+                'type': 'playbackEvent',
+                'payload': self.room.get_now_playing()
+            }
         else:
-            data = {'type' : 'playbackEvent', 'payload': {} }
+            data = {'type': 'playbackEvent', 'payload': {}}
 
         self.send(text_data=json.dumps(data))
 
