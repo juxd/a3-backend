@@ -1,5 +1,7 @@
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
+from rest_framework_simplejwt.tokens import AccessToken, UntypedToken, TokenError
+from urllib import parse
 import json
 
 from .room import Room
@@ -14,11 +16,19 @@ rooms = {}
 class PlaybackConsumer(WebsocketConsumer):
     
     def connect(self):
+
         self.room_id = self.scope['url_route']['kwargs']['room_id']
         self.room_group_name = 'room_%s' % self.room_id
 
-        # TODO: Extract user id from initial request
-        self.user_id = '123'
+        
+        query_string = self.scope['query_string'].decode("utf-8")
+        access_token = parse.parse_qs(query_string)['access_token'][0]
+        print("access token ", access_token)
+
+        try:
+            self.user_id = AccessToken(access_token).get('user_id')
+        except TokenError:
+            self.close(401)
 
         if DEBUG:
             print("CLIENT CONNECTED. ROOMS:", rooms)
@@ -81,8 +91,6 @@ class PlaybackConsumer(WebsocketConsumer):
                 song = {'id':id, 'votes': self.room.get_vote_count(id)}
                 songs.append(song)
             data = {'type':'voteCountEvent', 'payload' : {'songs': songs}}
-
-            print(data)
 
         # Propagate message to room channel layer
         async_to_sync(self.channel_layer.group_send)(

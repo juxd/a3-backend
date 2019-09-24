@@ -81,7 +81,6 @@ class Room:
             else:
                 existing_votes[song_id] = new_vote_direction
                 song.do_vote(new_vote_direction)
-        print(existing_votes)
     
     # Returns the song played
     def advance_queue(self):

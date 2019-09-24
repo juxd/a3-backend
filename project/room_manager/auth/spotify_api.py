@@ -79,9 +79,11 @@ def refresh_token_info(token: Dict[str, str]) -> Dict[str, str]:
         'refresh_token': token['refresh_token'],
         'redirect_uri': 'http://127.0.0.1:3000/'
     }
+    print(params)
     sresponse = pyrequests.post('https://accounts.spotify.com/api/token',
                                 params=params)
-    if response.status_code >= 400:
+    if sresponse.status_code >= 400:
+        print(sresponse.text)
         raise pyrequests.RequestException('Request Failed')
     if settings.DEBUG:
         print(sresponse.text)
