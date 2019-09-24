@@ -73,10 +73,10 @@ def get_user_info(token: Dict[str, str]) -> Dict[str, str]:
 
 def refresh_token_info(token: Dict[str, str]) -> Dict[str, str]:
     params = {
-        'grant_type': 'authorization_code',
+        'grant_type': 'refresh_token',
         'client_id': settings.CLIENT_ID,
         'client_secret': settings.CLIENT_SECRET,
-        'code': token['refresh_token'],
+        'refresh_token': token['refresh_token'],
         'redirect_uri': 'http://127.0.0.1:3000/'
     }
     sresponse = pyrequests.post('https://accounts.spotify.com/api/token',
