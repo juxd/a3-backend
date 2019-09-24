@@ -3,6 +3,7 @@ from typing import Dict, Union
 import urllib.parse as urlparse
 import requests as pyrequests
 import json
+import base64
 """
 Helper methods to access the spotify API
 """
@@ -40,6 +41,13 @@ AUTH_CODE_REQUEST_PARAMS = {
 AUTH_CODE_REQUEST_URL = "{}?{}".format(
     SPOTIFY_EXCHANGE_URI, urlparse.urlencode(AUTH_CODE_REQUEST_PARAMS))
 
+def _b64encoded(client_id: str, client_secret: str) -> str:
+    raw_credentials = '%s:%s' % (client_id, client_secret)
+    encoded_bytes = base64.b64encode(raw_credentials.encode('utf-8'))
+    encoded_string = str(encoded_bytes, 'utf-8')
+    return encoded_string
+
+ENCODED_CREDENTIALS = _b64encoded(settings.CLIENT_ID, settings.CLIENT_SECRET)
 
 def get_token(auth_code: str = '') -> Dict[str, Union[int, str]]:
     """
@@ -72,22 +80,23 @@ def get_user_info(token: Dict[str, str]) -> Dict[str, str]:
 
 
 def refresh_token_info(token: Dict[str, str]) -> Dict[str, str]:
-    params = {
+    data = {
         'grant_type': 'refresh_token',
-        'client_id': settings.CLIENT_ID,
-        'client_secret': settings.CLIENT_SECRET,
         'refresh_token': token['refresh_token'],
-        'redirect_uri': 'http://127.0.0.1:3000/'
     }
-    print(params)
+    headers = { 'Authorization': f'Basic {ENCODED_CREDENTIALS}' }
     sresponse = pyrequests.post('https://accounts.spotify.com/api/token',
-                                params=params)
-    if sresponse.status_code >= 400:
-        print(sresponse.text)
-        raise pyrequests.RequestException('Request Failed')
+                                headers=headers,
+                                data=data)
     if settings.DEBUG:
+        print(data)
+        print(headers)
         print(sresponse.text)
-    return json.loads(sresponse.text)
+    if sresponse.status_code >= 400:
+        raise pyrequests.RequestException('Request Failed')
+    res = json.loads(sresponse.text)
+    res['refresh_token'] = token['refresh_token']
+    return res
 
 
 #TODO: write decorator for retry pattern.
