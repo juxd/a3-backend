@@ -16,20 +16,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .room_manager.views import (
-    authorization,
-    user,
-    RoomViewSet
-)
+from .room_manager.views import (authorization, UserViewSet, RoomViewSet)
 
 router = DefaultRouter()
 router.register(r'rooms', RoomViewSet)
+router.register(r'users', UserViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('authorize/new/', authorization.initiate),
     path('authorize/done/', authorization.exchange_token),
     path('authorize/refresh/', authorization.refresh_token),
-    path('user/device/', user.device),
     path('', include(router.urls))
 ]

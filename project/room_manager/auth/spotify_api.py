@@ -41,13 +41,16 @@ AUTH_CODE_REQUEST_PARAMS = {
 AUTH_CODE_REQUEST_URL = "{}?{}".format(
     SPOTIFY_EXCHANGE_URI, urlparse.urlencode(AUTH_CODE_REQUEST_PARAMS))
 
+
 def _b64encoded(client_id: str, client_secret: str) -> str:
     raw_credentials = '%s:%s' % (client_id, client_secret)
     encoded_bytes = base64.b64encode(raw_credentials.encode('utf-8'))
     encoded_string = str(encoded_bytes, 'utf-8')
     return encoded_string
 
+
 ENCODED_CREDENTIALS = _b64encoded(settings.CLIENT_ID, settings.CLIENT_SECRET)
+
 
 def get_token(auth_code: str = '') -> Dict[str, Union[int, str]]:
     """
@@ -84,7 +87,7 @@ def refresh_token_info(token: Dict[str, str]) -> Dict[str, str]:
         'grant_type': 'refresh_token',
         'refresh_token': token['refresh_token'],
     }
-    headers = { 'Authorization': f'Basic {ENCODED_CREDENTIALS}' }
+    headers = {'Authorization': f'Basic {ENCODED_CREDENTIALS}'}
     sresponse = pyrequests.post('https://accounts.spotify.com/api/token',
                                 headers=headers,
                                 data=data)

@@ -23,7 +23,7 @@ class Room:
         self.room_id = room_id
         self.room_group_name = room_group_name
         self.user_consumers = []
-        self.user_votes = {} # {user_id : {song_id, direction}}
+        self.user_votes = {}  # {user_id : {song_id, direction}}
         self.queue = []
         self.now_playing = None
 
@@ -32,9 +32,9 @@ class Room:
         if DEBUG: print("USER ADDED", self.user_consumers)
 
         self.user_consumers.append(consumer)
-    
+
     def remove_user(self, consumer):
-        
+
         self.user_consumers.remove(consumer)
 
     def is_empty(self):
@@ -45,18 +45,20 @@ class Room:
     def add_songs(self, data):
 
         added_songs = []
-        
+
         for song_json in data:
             room_queued_song = RoomQueuedSong.from_json(song_json)
             heapq.heappush(self.queue, room_queued_song)
             added_songs.append(room_queued_song)
-        
-        if self.now_playing is None: 
+
+        if self.now_playing is None:
             song_played = self.advance_queue()
-            added_songs = [song for song in added_songs if not song.id == song_played.id]
-        
+            added_songs = [
+                song for song in added_songs if not song.id == song_played.id
+            ]
+
         return [song.to_json() for song in added_songs]
-    
+
     def vote_songs(self, consumer, data):
 
         user_id = consumer.user_id
@@ -76,24 +78,21 @@ class Room:
                 if new_vote_direction != existing_vote_direction:
                     existing_votes[song_id] = new_vote_direction
                     song.do_vote(new_vote_direction)
-            
+
             # User has not voted on song before
             else:
                 existing_votes[song_id] = new_vote_direction
                 song.do_vote(new_vote_direction)
         print(existing_votes)
-    
+
     # Returns the song played
     def advance_queue(self):
 
         if self.queue == []:
             self.now_playing = None
-            json_data = {
-                'type' : 'playbackEvent',
-                'payload': {}
-            }
+            json_data = {'type': 'playbackEvent', 'payload': {}}
             return None
-        else: 
+        else:
             song = heapq.heappop(self.queue)
 
             self.now_playing = song
@@ -107,25 +106,23 @@ class Room:
             thread.start()
 
             json_data = {
-                'type' : 'playbackEvent',
+                'type': 'playbackEvent',
                 'payload': self.now_playing.to_json()
             }
-        
+
         # 3. Broadcast song change to channel layer
         channel_layer = self.user_consumers[0].channel_layer
 
-        async_to_sync(channel_layer.group_send)(
-            self.room_group_name,
-            json_data
-        )
+        async_to_sync(channel_layer.group_send)(self.room_group_name,
+                                                json_data)
 
         return self.now_playing
 
     def get_song(self, song_id):
 
         for song in self.queue:
-            if song.id  == song_id: return song
-        
+            if song.id == song_id: return song
+
         raise RuntimeError("No song with " + str(song_id) + " in queue")
 
     def get_vote_count(self, song_id):
@@ -137,7 +134,8 @@ class Room:
     def get_queue(self):
 
         data = []
-        for room_queued_song in self.queue: data.append(room_queued_song.to_json())
+        for room_queued_song in self.queue:
+            data.append(room_queued_song.to_json())
         return data
 
     def get_now_playing(self):
@@ -147,7 +145,6 @@ class Room:
     def has_now_playing(self):
 
         return self.now_playing is not None
-
 
     @classmethod
     def play_song_for_users(cls, song, user_consumers):
@@ -228,18 +225,12 @@ class Room:
 
 
 class RoomQueuedSong:
-
     @classmethod
     def from_json(cls, json):
-        return RoomQueuedSong(
-            json['id'], 
-            json['name'],
-            json['artists'],
-            json['album'],
-            json['isExplicit'],
-            json['imageSource'],
-            json['trackDuration'],
-            json.get('votes', 0))
+        return RoomQueuedSong(json['id'], json['name'], json['artists'],
+                              json['album'], json['isExplicit'],
+                              json['imageSource'], json['trackDuration'],
+                              json.get('votes', 0))
 
     def to_json(self):
         json = {}
@@ -264,10 +255,13 @@ class RoomQueuedSong:
         print(self.votes)
 
     def undo_vote(self, vote_direction):
-        if vote_direction == VOTE_DIRECTION_UP: self.do_vote(VOTE_DIRECTION_DOWN)
-        if vote_direction == VOTE_DIRECTION_DOWN: self.do_vote(VOTE_DIRECTION_UP)
+        if vote_direction == VOTE_DIRECTION_UP:
+            self.do_vote(VOTE_DIRECTION_DOWN)
+        if vote_direction == VOTE_DIRECTION_DOWN:
+            self.do_vote(VOTE_DIRECTION_UP)
 
-    def __init__(self, id, name, artists, album, is_explicit, image_source, duration, votes):
+    def __init__(self, id, name, artists, album, is_explicit, image_source,
+                 duration, votes):
         self.id = id
         self.name = name
         self.artists = artists
