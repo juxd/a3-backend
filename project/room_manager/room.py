@@ -235,10 +235,9 @@ class Room:
 
 
 class RoomQueuedSong:
-    
+
     @classmethod
     def from_json(cls, json):
-
         return RoomQueuedSong(
             json['id'], 
             json['name'],
@@ -250,7 +249,6 @@ class RoomQueuedSong:
             json.get('votes', 0))
 
     def to_json(self):
-
         json = {}
         json['id'] = self.id
         json['name'] = self.name
@@ -263,17 +261,14 @@ class RoomQueuedSong:
         return json
 
     def do_vote(self, vote_direction):
-        
         if vote_direction == VOTE_DIRECTION_UP: self.votes += 1
         if vote_direction == VOTE_DIRECTION_DOWN: self.votes -= 1
 
     def undo_vote(self, vote_direction):
-
         if vote_direction == VOTE_DIRECTION_UP: self.do_vote(VOTE_DIRECTION_DOWN)
         if vote_direction == VOTE_DIRECTION_DOWN: self.do_vote(VOTE_DIRECTION_UP)
-    
-    def __init__(self, id, name, artists, album, is_explicit, image_source, duration, votes):
 
+    def __init__(self, id, name, artists, album, is_explicit, image_source, duration, votes):
         self.id = id
         self.name = name
         self.artists = artists
@@ -285,7 +280,6 @@ class RoomQueuedSong:
 
     # Inherent ordering by votes, then id
     def __lt__(self, other):
-
         if self.votes < other.votes: return True
         return self.id < other.id
 
