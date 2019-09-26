@@ -145,7 +145,7 @@ class PlaybackConsumer(WebsocketConsumer):
     def send_user_votes(self):
         data = {
             'type': 'voteActionEvent',
-            'payload': self.room.get_user_votes(self.user_id)
+            'payload': { 'votes' : self.room.get_user_votes(self.user_id) }
         }
         self.send(text_data=json.dumps(data))
 
