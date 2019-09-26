@@ -3,6 +3,7 @@ from channels.generic.websocket import WebsocketConsumer
 from rest_framework_simplejwt.tokens import AccessToken, UntypedToken, TokenError
 from urllib import parse
 import json
+import logging
 
 from .room import Room
 
@@ -27,8 +28,11 @@ class PlaybackConsumer(WebsocketConsumer):
                 rooms[self.room_id] = Room(self.room_id, self.room_group_name,
                                         rooms)
             else:
+                logging.error("Room model for " +str(self.room_id) + " not found in DB")
                 self.close(404)
                 return
+
+        logging.debug("In-memory Room with " +str(self.room_id) + " found")
 
         self.room = rooms[self.room_id]
         
