@@ -17,7 +17,10 @@ import requests as pyrequests
 
 @api_view(["GET"])
 def initiate(request: Request) -> JsonResponse:
-    response = redirect(api.AUTH_CODE_REQUEST_URL)
+    if 'redirect_to' in request.query_params:
+        response = redirect(api.redirect_to_uri(request.query_params['redirect_to']))
+    else:
+        response = redirect(api.AUTH_CODE_REQUEST_URL)
     return response
 
 
@@ -59,7 +62,7 @@ def refresh_token(request: Request) -> JsonResponse:
                             status=status.HTTP_401_UNAUTHORIZED)
 
     if settings.DEBUG:
-        print(ser.validated_data)
+        print('validated', ser.validated_data)
     # If this user's credentials doesn't contain spotify credentials, just return it.
     if not spotify_params['access_token'] or not spotify_params[
             'refresh_token']:
@@ -67,16 +70,17 @@ def refresh_token(request: Request) -> JsonResponse:
 
     # Check and refresh user's spotify token
     try:
-        response = get_user_info(spotify_params)
+        response = refresh_token_info(spotify_params)
+        print(response)
         return JsonResponse({
             'access_token':
             ser.validated_data['access'],
             'refresh':
             body['refresh'],
             'spotify_access_token':
-            spotify_params['access_token'],
+            response['access_token'],
             'spotify_refresh_token':
-            spotify_params['refresh_token']
+            response['refresh_token']
         })
     except pyrequests.RequestException:
         pass

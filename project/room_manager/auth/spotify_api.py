@@ -41,6 +41,11 @@ AUTH_CODE_REQUEST_PARAMS = {
 AUTH_CODE_REQUEST_URL = "{}?{}".format(
     SPOTIFY_EXCHANGE_URI, urlparse.urlencode(AUTH_CODE_REQUEST_PARAMS))
 
+def redirect_to_uri(path: str) -> str:
+    redirect = path
+    params = AUTH_CODE_REQUEST_PARAMS.copy()
+    params['state'] = redirect
+    return "{}?{}".format(SPOTIFY_EXCHANGE_URI, urlparse.urlencode(params))
 
 def _b64encoded(client_id: str, client_secret: str) -> str:
     raw_credentials = '%s:%s' % (client_id, client_secret)
@@ -92,8 +97,8 @@ def refresh_token_info(token: Dict[str, str]) -> Dict[str, str]:
                                 headers=headers,
                                 data=data)
     if settings.DEBUG:
-        print(data)
-        print(headers)
+        print('data', data)
+        print('headers',headers)
         print(sresponse.text)
     if sresponse.status_code >= 400:
         raise pyrequests.RequestException('Request Failed')
