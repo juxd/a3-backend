@@ -9,6 +9,8 @@ import time
 import requests as pyrequests
 
 from .models.user import User
+from .models.room import Room as RoomModel
+from . import consumers
 
 DEBUG = False
 VOTE_DIRECTION_UP = 'up'
@@ -16,9 +18,10 @@ VOTE_DIRECTION_DOWN = 'down'
 
 
 class Room:
-    def __init__(self, room_id, room_group_name, parent):
+    def __init__(self, room_id, room_group_name, owner_id):
         self.room_id = room_id
         self.room_group_name = room_group_name
+        self.owner_id = owner_id
         self.user_consumers = []
         self.user_votes = {}  # {user_id : {song_id:direction}}
         self.queue = SongHeap()
@@ -44,6 +47,7 @@ class Room:
 
         if self.now_playing is None:
             song_played = self.advance_queue()
+            print("song played ", song_played)
             if song_played is not None:
                 added_songs = [
                     song for song in added_songs
@@ -58,9 +62,16 @@ class Room:
         if user_id not in self.user_votes: self.user_votes[user_id] = {}
         existing_votes = self.user_votes[user_id]
 
+        valid_votes = []
         for new_vote in data:
             song_id = new_vote['id']
             song = self.get_song(song_id)
+
+            # Ignore songs that no longer exists
+            if song is None: 
+                continue
+            else:
+                valid_votes.append(new_vote)
 
             new_vote_direction = new_vote['voteDirection']
 
@@ -78,12 +89,23 @@ class Room:
                 song.do_vote(new_vote_direction)
 
             self.queue.update(song)
+        
+        return valid_votes
 
     # Returns the song played
     def advance_queue(self):
-        song_played = None
 
-        if self.queue.is_empty():
+        song_played = None
+        
+        # Check if room is deleted
+        if RoomModel.get_owner_id_if_exists(self.room_id) is None:
+            consumers.ROOMS.pop(self.room_id)
+            json_data = {
+                'type': 'stopEvent',
+                'payload': 'close'
+            }
+        
+        elif self.queue.is_empty():
             self.now_playing = None
             json_data = {'type': 'playbackEvent', 'payload': {}}
 
@@ -93,7 +115,7 @@ class Room:
 
             # TODO: Async the following
             # 1. Send request to Spotify to play track
-            Room.play_song_for_users(song_played, self.user_consumers)
+            Room.play_song_for_owner(song_played, self)
 
             # 2. Schedule function to execute when song ends
             thread = threading.Timer(song_played.duration / 1000 - 1,
@@ -120,12 +142,9 @@ class Room:
 
         return song_played
 
+    # Returns None when no such song
     def get_song(self, song_id):
-        song = self.queue.get_song_by_id(song_id)
-        if song is not None:
-            return song
-        else:
-            raise RuntimeError("No song with " + str(song_id) + " in queue")
+        return self.queue.get_song_by_id(song_id)
 
     def get_queue(self):
         return [song.to_json() for song in self.queue.get_all_songs()]
@@ -155,10 +174,10 @@ class Room:
         return self.now_playing is not None
 
     @classmethod
-    def play_song_for_users(cls, song, user_consumers):
-        user_ids = [consumer.user_id for consumer in user_consumers]
-        token_device_pairs = User.get_device_and_token(user_ids)
-        # print(token_device_pairs)
+    def play_song_for_owner(cls, song, room):
+        # user_ids = [consumer.user_id for consumer in room.user_consumers]
+        token_device_pairs = User.get_device_and_token([room.owner_id])
+        print(token_device_pairs)
 
         # TODO: Make this async
         for user_id, user_token, device_id in token_device_pairs:
@@ -181,11 +200,14 @@ class Room:
             # TODO: Send message to frontend to reconnect device
             if response.status_code >= 400:
                 print(response.text)
-                # remove user from room
-                user_consumers[:] = [
-                    consumer for consumer in user_consumers
-                    if consumer.user_id != user_id
-                ]
+                json_data = {
+                    'type': 'stopEvent',
+                    'payload': 'disconnect'
+                }
+                if len(room.user_consumers) > 0:
+                    channel_layer = room.user_consumers[0].channel_layer
+
+                    async_to_sync(channel_layer.group_send)(room.room_group_name, json_data)
 
     # TODO: Flesh this out into a proper flow inside spotify_api
     #   - Schedule refresh rather than get new token everytime?

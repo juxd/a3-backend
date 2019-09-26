@@ -6,14 +6,13 @@ import json
 import logging
 
 from .room import Room
-
 from .models.room import Room as RoomModel
 
 DEBUG = False
 
 # TODO: Cache this with redis
 # {room_id: <Room Object>}
-rooms = {}
+ROOMS = {}
 
 
 class PlaybackConsumer(WebsocketConsumer):
@@ -23,10 +22,10 @@ class PlaybackConsumer(WebsocketConsumer):
         self.room_group_name = 'room_%s' % self.room_id
 
         # 1. Verify that room exists. If yes, get or create in-memory room
-        if self.room_id not in rooms:
-            if RoomModel.exists(self.room_id):
-                rooms[self.room_id] = Room(self.room_id, self.room_group_name,
-                                           rooms)
+        if self.room_id not in ROOMS:
+            self.owner_id = RoomModel.get_owner_id_if_exists(self.room_id)
+            if self.owner_id is not None:
+                ROOMS[self.room_id] = Room(self.room_id, self.room_group_name, self.owner_id)
             else:
                 logging.error("Room model for " + str(self.room_id) +
                               " not found in DB")
@@ -35,7 +34,7 @@ class PlaybackConsumer(WebsocketConsumer):
 
         logging.debug("In-memory Room with " + str(self.room_id) + " found")
 
-        self.room = rooms[self.room_id]
+        self.room = ROOMS[self.room_id]
 
         # 2. Verify JWT token and get user identity
         query_string = self.scope['query_string'].decode("utf-8")
@@ -88,14 +87,15 @@ class PlaybackConsumer(WebsocketConsumer):
             if added == []: return
 
             data['payload']['songs'] = added
+            data['payload']['type'] = 'changes'
 
         # 2. Vote Action Event: Tally votes in room
         elif type == 'voteActionEvent':
-            self.room.vote_songs(self, payload['votes'])
+            valid_votes = self.room.vote_songs(self, payload['votes'])
 
             # Convert to vote count event
             songs = []
-            for vote in payload['votes']:
+            for vote in valid_votes:
                 id = vote['id']
                 song = {'id': id, 'votes': self.room.get_vote_count(id)}
                 songs.append(song)
@@ -118,6 +118,10 @@ class PlaybackConsumer(WebsocketConsumer):
     def voteCountEvent(self, json_data):
         self.send(text_data=json.dumps(json_data))
 
+    # 4. Stop Event: Notify clients of a stop in playback
+    def stopEvent(self, json_data):
+        self.send(text_data=json.dumps(json_data))
+
     ### HELPER FUNCTIONS ###
 
     def send_initial_data(self):
@@ -130,7 +134,8 @@ class PlaybackConsumer(WebsocketConsumer):
         data = {
             'type': 'queueEvent',
             'payload': {
-                'songs': self.room.get_queue()
+                'songs': self.room.get_queue(),
+                'type': 'all'
             }
         }
 

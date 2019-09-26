@@ -2,10 +2,12 @@ from enum import Enum
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.core.exceptions import ObjectDoesNotExist
 from .timestampable import Timestampable
 from .user_suggestion import UserSuggestion
 from rest_framework import serializers, permissions
 from .user import User, UserShareableSerializer
+
 import uuid
 
 
@@ -41,8 +43,14 @@ class Room(Timestampable):
         self.save()
 
     @classmethod
-    def exists(cls, room_id):
-        return cls.objects.filter(unique_identifier=room_id).count() == 1
+    def get_owner_id_if_exists(cls, room_id):
+        try:
+            room = cls.objects.filter(alive=1).get(unique_identifier=room_id)
+            return room.owner.identifier
+        except ObjectDoesNotExist:
+            return None
+
+
 
 
 @receiver(post_save, sender=Room)
