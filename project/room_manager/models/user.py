@@ -9,8 +9,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 class User(Timestampable, AbstractBaseUser):
     display_name = models.CharField(max_length=40, null=False, blank=True)
-    access_token = models.CharField(max_length=200, null=True, blank=True)
-    refresh_token = models.CharField(max_length=200, null=True, blank=True)
+    access_token = models.CharField(max_length=400, null=True, blank=True)
+    refresh_token = models.CharField(max_length=400, null=True, blank=True)
     auth_code = models.CharField(max_length=200, null=True, blank=True)
     token_expires_in = models.PositiveIntegerField(null=True, blank=True)
     token_issue_time = models.DateTimeField(null=True, blank=True)

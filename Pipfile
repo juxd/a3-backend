@@ -16,6 +16,9 @@ channels-redis = "*"
 djangorestframework = "*"
 django-cors-headers = "*"
 djangorestframework-simplejwt = "*"
+gunicorn = "*"
+"psycopg2-binary" = "*"
+dj-database-url = "*"
 
 [requires]
 python_version = "3.7"
