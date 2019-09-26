@@ -1,8 +1,11 @@
 from enum import Enum
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from .timestampable import Timestampable
 from .user_suggestion import UserSuggestion
-from rest_framework import serializers
+from rest_framework import serializers, permissions
+from .user import User, UserShareableSerializer
 import uuid
 
 
@@ -20,24 +23,54 @@ class Room(Timestampable):
                                              decimal_places=5,
                                              null=True)
     name = models.CharField(max_length=30, null=False)
+    description = models.CharField(max_length=280, null=True, blank=True)
+    owner = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
+    alive = models.PositiveSmallIntegerField(choices=((0, 'DEAD'), (1,
+                                                                    'ALIVE')),
+                                             default=0)
 
     class Meta:
         app_label = 'room_manager'
         db_table = 'room'
+
+    def kill(self):
+        """
+        "Kills" the room
+        """
+        self.alive = 0
+        self.save()
 
     @classmethod
     def exists(cls, room_id):
         return cls.objects.filter(unique_identifier=room_id).count() == 1
 
 
+@receiver(post_save, sender=Room)
+def turn_on(sender, instance, created, **kwargs):
+    if created:
+        instance.alive = 1
+        instance.save()
+
+
+class RoomOwnerPermission(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        return obj.owner == request.user
+
+
 class RoomSerializer(serializers.ModelSerializer):
+    owner = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
     class Meta:
         model = Room
         fields = [
             'name', 'unique_identifier', 'location_latitude',
-            'location_longitude'
+            'location_longitude', 'alive', 'owner', 'description'
         ]
         read_only_fields = ['unique_identifier']
+        depth = 1
 
 
 class RoomQueuedSong(Timestampable):

@@ -14,6 +14,7 @@ DEBUG = False
 VOTE_DIRECTION_UP = 'up'
 VOTE_DIRECTION_DOWN = 'down'
 
+
 class Room:
     def __init__(self, room_id, room_group_name, parent):
         self.room_id = room_id
@@ -45,7 +46,8 @@ class Room:
             song_played = self.advance_queue()
             if song_played is not None:
                 added_songs = [
-                    song for song in added_songs if not song.id == song_played.id
+                    song for song in added_songs
+                    if not song.id == song_played.id
                 ]
 
         return [song.to_json() for song in added_songs]
@@ -59,7 +61,7 @@ class Room:
         for new_vote in data:
             song_id = new_vote['id']
             song = self.get_song(song_id)
-            
+
             new_vote_direction = new_vote['voteDirection']
 
             # User voted on song before
@@ -74,21 +76,18 @@ class Room:
             else:
                 existing_votes[song_id] = new_vote_direction
                 song.do_vote(new_vote_direction)
-            
+
             self.queue.update(song)
-    
+
     # Returns the song played
     def advance_queue(self):
         song_played = None
 
         if self.queue.is_empty():
             self.now_playing = None
-            json_data = {
-                'type' : 'playbackEvent',
-                'payload': {}
-            }
+            json_data = {'type': 'playbackEvent', 'payload': {}}
 
-        else: 
+        else:
             song_played = self.queue.pop()
             self.now_playing = song_played
 
@@ -97,7 +96,8 @@ class Room:
             Room.play_song_for_users(song_played, self.user_consumers)
 
             # 2. Schedule function to execute when song ends
-            thread = threading.Timer(song_played.duration/1000 - 1, self.advance_queue)
+            thread = threading.Timer(song_played.duration / 1000 - 1,
+                                     self.advance_queue)
             thread.daemon = False
             thread.start()
 
@@ -110,22 +110,19 @@ class Room:
         if len(self.user_consumers) > 0:
             channel_layer = self.user_consumers[0].channel_layer
 
-            async_to_sync(channel_layer.group_send)(
-                self.room_group_name,
-                json_data
-            )
-        
+            async_to_sync(channel_layer.group_send)(self.room_group_name,
+                                                    json_data)
+
         # 4. Remove user votes for the newly played song
-        if song_played is not None: 
+        if song_played is not None:
             for _, votes in self.user_votes.items():
                 if song_played.id in votes: votes.pop(song_played.id)
-
 
         return song_played
 
     def get_song(self, song_id):
         song = self.queue.get_song_by_id(song_id)
-        if song is not None: 
+        if song is not None:
             return song
         else:
             raise RuntimeError("No song with " + str(song_id) + " in queue")
@@ -135,17 +132,20 @@ class Room:
 
     def get_vote_count(self, song_id):
         song = self.queue.get_song_by_id(song_id)
-        if song is not None: 
+        if song is not None:
             return song.votes
         else:
             raise RuntimeError("No song with " + str(song_id) + " in queue")
-    
+
     def get_user_votes(self, user_id):
         # Input shape: {user_id : {song_id: direction}}
         # Output shape: [{'id': song_id, 'voteDirection':direction}]
         if user_id not in self.user_votes:
             return []
-        votes = [{'id':song_id, 'voteDirection':direction} for song_id, direction in self.user_votes[user_id].items()]
+        votes = [{
+            'id': song_id,
+            'voteDirection': direction
+        } for song_id, direction in self.user_votes[user_id].items()]
         return votes
 
     def get_now_playing(self):
@@ -257,10 +257,11 @@ class RoomQueuedSong:
         if self.votes < other.votes: return True
         return self.id < other.id
 
+
 class SongHeap(object):
     def __init__(self):
-       self.key = lambda song: (-song.votes)
-       self._data = []
+        self.key = lambda song: (-song.votes)
+        self._data = []
 
     def push(self, song):
         heapq.heappush(self._data, (self.key(song), song))
@@ -269,7 +270,8 @@ class SongHeap(object):
         return heapq.heappop(self._data)[1]
 
     def update(self, song):
-        self._data = [(key, x) if x.id != song.id else (self.key(song), song) for (key, x) in self._data]
+        self._data = [(key, x) if x.id != song.id else (self.key(song), song)
+                      for (key, x) in self._data]
         heapq.heapify(self._data)
 
     def is_empty(self):
@@ -282,4 +284,3 @@ class SongHeap(object):
 
     def get_all_songs(self):
         return [x for (key, x) in self._data]
-

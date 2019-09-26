@@ -17,6 +17,9 @@ class UserViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated],
             url_path='device')
     def update_device(self, request, pk=None):
+        """
+        Updates the user's `device_id`.
+        """
         user = request.user
         if user is None:
             return JsonResponse({'error': 'Unauthenticated!'},

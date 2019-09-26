@@ -26,16 +26,17 @@ class PlaybackConsumer(WebsocketConsumer):
         if self.room_id not in rooms:
             if RoomModel.exists(self.room_id):
                 rooms[self.room_id] = Room(self.room_id, self.room_group_name,
-                                        rooms)
+                                           rooms)
             else:
-                logging.error("Room model for " +str(self.room_id) + " not found in DB")
+                logging.error("Room model for " + str(self.room_id) +
+                              " not found in DB")
                 self.close(404)
                 return
 
-        logging.debug("In-memory Room with " +str(self.room_id) + " found")
+        logging.debug("In-memory Room with " + str(self.room_id) + " found")
 
         self.room = rooms[self.room_id]
-        
+
         # 2. Verify JWT token and get user identity
         query_string = self.scope['query_string'].decode("utf-8")
         access_token = parse.parse_qs(query_string)['access_token'][0]
@@ -53,7 +54,7 @@ class PlaybackConsumer(WebsocketConsumer):
         self.room.add_user(self)
         async_to_sync(self.channel_layer.group_add)(self.room_group_name,
                                                     self.channel_name)
-        
+
         # 4. Accept connection and send initial data
         self.is_valid = True
         self.accept()

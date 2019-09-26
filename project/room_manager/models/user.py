@@ -53,6 +53,12 @@ class User(Timestampable, AbstractBaseUser):
         db_table = 'user'
 
 
+class UserShareableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['identifier', 'display_name']
+
+
 class UserTokenDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
