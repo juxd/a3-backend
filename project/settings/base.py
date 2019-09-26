@@ -143,10 +143,15 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True
         },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True
+        },
         'django.request': {
             'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': False
+            'level': 'INFO',
+            'propagate': True
         },
     }
 }

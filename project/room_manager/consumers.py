@@ -43,9 +43,11 @@ class PlaybackConsumer(WebsocketConsumer):
         try:
             self.user_id = AccessToken(access_token).get('user_id')
         except TokenError as e:
-            print(e)
+            logging.error(e)
             self.close(401)
             return
+        
+        logging.debug("User identified")
 
         # 3. Add user to room and broadcast to channel layer
         self.room.add_user(self)
