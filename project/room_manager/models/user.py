@@ -39,10 +39,10 @@ class User(Timestampable, AbstractBaseUser):
         return user, created
 
     @classmethod
-    def get_device_and_token(cls, user_ids):
+    def get_device_and_tokens(cls, user_ids):
         users = cls.objects.filter(identifier__in=user_ids)
         return list(
-            users.values_list('identifier', 'access_token', 'device_id'))
+            users.values_list('identifier', 'access_token', 'refresh_token', 'device_id'))
 
     def set_device_id(self, new_id):
         self.device_id = new_id

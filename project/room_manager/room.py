@@ -7,10 +7,12 @@ import json
 import threading
 import time
 import requests as pyrequests
+import logging
 
 from .models.user import User
 from .models.room import Room as RoomModel
 from . import consumers
+from .auth import spotify_api
 
 DEBUG = False
 VOTE_DIRECTION_UP = 'up'
@@ -176,15 +178,18 @@ class Room:
     @classmethod
     def play_song_for_owner(cls, song, room):
         # user_ids = [consumer.user_id for consumer in room.user_consumers]
-        token_device_pairs = User.get_device_and_token([room.owner_id])
-        print(token_device_pairs)
+        user_data = User.get_device_and_tokens([room.owner_id])
+        print(user_data)
 
         # TODO: Make this async
-        for user_id, user_token, device_id in token_device_pairs:
+        for user_id, access_token, refresh_token, device_id in user_data:
+
+            access_token = Room.refresh_access_token(access_token, refresh_token)
+
             headers = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + user_token,
+                'Authorization': 'Bearer ' + access_token,
             }
 
             params = (('device_id', device_id), )
@@ -199,7 +204,11 @@ class Room:
 
             # TODO: Send message to frontend to reconnect device
             if response.status_code >= 400:
-                print(response.text)
+                logging.error(response.text)
+                logging.error("User ID: ", user_id)
+                logging.error("Access Token: ", access_token)
+                logging.error("Refresh Token: ", refresh_token)
+                logging.error("Device ID: ", device_id)
                 json_data = {
                     'type': 'stopEvent',
                     'payload': 'disconnect'
@@ -208,6 +217,21 @@ class Room:
                     channel_layer = room.user_consumers[0].channel_layer
 
                     async_to_sync(channel_layer.group_send)(room.room_group_name, json_data)
+
+    @classmethod
+    def refresh_access_token(cls, access_token, refresh_token):
+        # Refresh user's token
+        spotify_params = {}
+        spotify_params['access_token'] = access_token
+        spotify_params['refresh_token'] = refresh_token
+        try:
+            spotify_api.get_user_info(spotify_params)
+            return access_token
+        except pyrequests.RequestException:
+            pass
+        refresh_response = spotify_api.refresh_token_info(spotify_params)
+        return refresh_response['access_token']
+
 
     # TODO: Flesh this out into a proper flow inside spotify_api
     #   - Schedule refresh rather than get new token everytime?
