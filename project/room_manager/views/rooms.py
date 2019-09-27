@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.serializers import CurrentUserDefault
 from django.http import JsonResponse
+from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
@@ -27,7 +28,7 @@ class RoomViewSet(viewsets.ModelViewSet):
         room = get_object_or_404(Room, unique_identifier=pk)
         serializer = self.get_serializer(room)
         data = dict(serializer.data)
-        
+
         user = request.user
         if user.is_anonymous:
             isHost = False
@@ -46,8 +47,8 @@ class RoomViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data,
                                          context={'request': request})
         serializer.is_valid()
-        print(serializer.errors)
         self.perform_create(serializer)
+        request.user.set_device_id(request.data['device_id'])
         headers = self.get_success_headers(serializer.data)
         return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
 

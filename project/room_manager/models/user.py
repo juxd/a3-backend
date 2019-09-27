@@ -43,7 +43,7 @@ class User(Timestampable, AbstractBaseUser):
         users = cls.objects.filter(identifier__in=user_ids)
         return list(
             users.values_list('identifier', 'access_token', 'refresh_token', 'device_id'))
-        
+
     def get_user_id(self):
         return self.identifier
 
