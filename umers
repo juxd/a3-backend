@@ -1,92 +1,0 @@
-[1mdiff --git a/project/room_manager/models/user.py b/project/room_manager/models/user.py[m
-[1mindex e1c0f04..bfd036c 100644[m
-[1m--- a/project/room_manager/models/user.py[m
-[1m+++ b/project/room_manager/models/user.py[m
-[36m@@ -39,10 +39,10 @@[m [mclass User(Timestampable, AbstractBaseUser):[m
-         return user, created[m
- [m
-     @classmethod[m
-[31m-    def get_device_and_token(cls, user_ids):[m
-[32m+[m[32m    def get_device_and_tokens(cls, user_ids):[m
-         users = cls.objects.filter(identifier__in=user_ids)[m
-         return list([m
-[31m-            users.values_list('identifier', 'access_token', 'device_id'))[m
-[32m+[m[32m            users.values_list('identifier', 'access_token', 'refresh_token', 'device_id'))[m
- [m
-     def set_device_id(self, new_id):[m
-         self.device_id = new_id[m
-[1mdiff --git a/project/room_manager/room.py b/project/room_manager/room.py[m
-[1mindex 819e209..4ea03ba 100644[m
-[1m--- a/project/room_manager/room.py[m
-[1m+++ b/project/room_manager/room.py[m
-[36m@@ -7,10 +7,12 @@[m [mimport json[m
- import threading[m
- import time[m
- import requests as pyrequests[m
-[32m+[m[32mimport logging[m[41m[m
- [m
- from .models.user import User[m
- from .models.room import Room as RoomModel[m
- from . import consumers[m
-[32m+[m[32mfrom .auth import spotify_api[m[41m[m
- [m
- DEBUG = False[m
- VOTE_DIRECTION_UP = 'up'[m
-[36m@@ -176,15 +178,18 @@[m [mclass Room:[m
-     @classmethod[m
-     def play_song_for_owner(cls, song, room):[m
-         # user_ids = [consumer.user_id for consumer in room.user_consumers][m
-[31m-        token_device_pairs = User.get_device_and_token([room.owner_id])[m
-[31m-        print(token_device_pairs)[m
-[32m+[m[32m        user_data = User.get_device_and_tokens([room.owner_id])[m[41m[m
-[32m+[m[32m        print(user_data)[m[41m[m
- [m
-         # TODO: Make this async[m
-[31m-        for user_id, user_token, device_id in token_device_pairs:[m
-[32m+[m[32m        for user_id, access_token, refresh_token, device_id in user_data:[m[41m[m
-[32m+[m[41m[m
-[32m+[m[32m            access_token = Room.refresh_access_token(access_token, refresh_token)[m[41m[m
-[32m+[m[41m[m
-             headers = {[m
-                 'Accept': 'application/json',[m
-                 'Content-Type': 'application/json',[m
-[31m-                'Authorization': 'Bearer ' + user_token,[m
-[32m+[m[32m                'Authorization': 'Bearer ' + access_token,[m[41m[m
-             }[m
- [m
-             params = (('device_id', device_id), )[m
-[36m@@ -199,7 +204,11 @@[m [mclass Room:[m
- [m
-             # TODO: Send message to frontend to reconnect device[m
-             if response.status_code >= 400:[m
-[31m-                print(response.text)[m
-[32m+[m[32m                logging.error(response.text)[m[41m[m
-[32m+[m[32m                logging.error("User ID: ", user_id)[m[41m[m
-[32m+[m[32m                logging.error("Access Token: ", access_token)[m[41m[m
-[32m+[m[32m                logging.error("Refresh Token: ", refresh_token)[m[41m[m
-[32m+[m[32m                logging.error("Device ID: ", device_id)[m[41m[m
-                 json_data = {[m
-                     'type': 'stopEvent',[m
-                     'payload': 'disconnect'[m
-[36m@@ -209,6 +218,21 @@[m [mclass Room:[m
- [m
-                     async_to_sync(channel_layer.group_send)(room.room_group_name, json_data)[m
- [m
-[32m+[m[32m    @classmethod[m[41m[m
-[32m+[m[32m    def refresh_access_token(cls, access_token, refresh_token):[m[41m[m
-[32m+[m[32m        # Refresh user's token[m[41m[m
-[32m+[m[32m        spotify_params = {}[m[41m[m
-[32m+[m[32m        spotify_params['access_token'] = access_token[m[41m[m
-[32m+[m[32m        spotify_params['refresh_token'] = refresh_token[m[41m[m
-[32m+[m[32m        try:[m[41m[m
-[32m+[m[32m            spotify_api.get_user_info(spotify_params)[m[41m[m
-[32m+[m[32m            return access_token[m[41m[m
-[32m+[m[32m        except pyrequests.RequestException:[m[41m[m
-[32m+[m[32m            pass[m[41m[m
-[32m+[m[32m        refresh_response = spotify_api.refresh_token_info(spotify_params)[m[41m[m
-[32m+[m[32m        return refresh_response['access_token'][m[41m[m
-[32m+[m[41m[m
-[32m+[m[41m[m
-     # TODO: Flesh this out into a proper flow inside spotify_api[m
-     #   - Schedule refresh rather than get new token everytime?[m
-     @classmethod[m
