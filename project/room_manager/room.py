@@ -188,6 +188,7 @@ class Room:
         # TODO: Make this async
         for user_id, access_token, refresh_token, device_id in user_data:
 
+            logging.debug("Device ID: " + device_id)
             access_token = Room.refresh_access_token(access_token, refresh_token)
 
             headers = {

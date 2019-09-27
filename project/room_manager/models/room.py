@@ -69,7 +69,7 @@ class RoomOwnerPermission(permissions.BasePermission):
 
 
 class RoomSerializer(serializers.ModelSerializer):
-    owner = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    owner = serializers.CharField(read_only=True, source='owner.identifier')
 
     class Meta:
         model = Room

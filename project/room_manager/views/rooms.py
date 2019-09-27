@@ -26,7 +26,16 @@ class RoomViewSet(viewsets.ModelViewSet):
         """
         room = get_object_or_404(Room, unique_identifier=pk)
         serializer = self.get_serializer(room)
-        return JsonResponse(serializer.data)
+        data = dict(serializer.data)
+        
+        user = request.user
+        if user.is_anonymous:
+            isHost = False
+        else:
+            isHost = data['owner'] == user.identifier
+        data['isHost'] = isHost
+
+        return JsonResponse(data)
 
     def destroy(self, request, pk=None):
         room = get_object_or_404(Room, unique_identifier=pk)
@@ -34,6 +43,9 @@ class RoomViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def create(self, request, pk=None):
+        user = request.user
+        print(request.user)
+        print(request.data)
         serializer = self.get_serializer(data=request.data,
                                          context={'request': request})
         serializer.is_valid()
