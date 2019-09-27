@@ -27,7 +27,7 @@ class RoomViewSet(viewsets.ModelViewSet):
         """
         room = get_object_or_404(Room, unique_identifier=pk, alive=1)
         serializer = self.get_serializer(room)
-        data = dict(serializer.data)
+        data = dict(serializer.data, status=status.HTTP_200_OK)
 
         user = request.user
         if user.is_anonymous:
