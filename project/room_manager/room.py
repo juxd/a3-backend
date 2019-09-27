@@ -75,24 +75,29 @@ class Room:
             # Ignore songs that no longer exists
             if song is None: 
                 continue
-            else:
-                valid_votes.append(new_vote)
 
-            new_vote_direction = new_vote['voteDirection']
+            vote_direction = new_vote['voteDirection']
 
             # User voted on song before
             if song_id in existing_votes:
                 existing_vote_direction = existing_votes.pop(song_id)
                 song.undo_vote(existing_vote_direction)
-                if new_vote_direction != existing_vote_direction:
-                    existing_votes[song_id] = new_vote_direction
-                    song.do_vote(new_vote_direction)
 
+                # If new vote is in the opposite direction
+                if vote_direction != existing_vote_direction: 
+                    existing_votes[song_id] = vote_direction
+                    song.do_vote(vote_direction)
+                
+                # If new vote is an undo action
+                else:
+                    new_vote['voteDirection'] = 'neutral'
+        
             # User has not voted on song before
             else:
-                existing_votes[song_id] = new_vote_direction
-                song.do_vote(new_vote_direction)
-
+                existing_votes[song_id] = vote_direction
+                song.do_vote(vote_direction)
+                
+            valid_votes.append(new_vote)
             self.queue.update(song)
         
         return valid_votes
