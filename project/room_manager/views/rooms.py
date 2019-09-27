@@ -32,7 +32,7 @@ class RoomViewSet(viewsets.ModelViewSet):
         if user.is_anonymous:
             isHost = False
         else:
-            isHost = data['owner'] == user.identifier
+            isHost = user.identifier == Room.get_owner_id_if_exists(data['unique_identifier'])
         data['isHost'] = isHost
 
         return JsonResponse(data)
@@ -43,9 +43,6 @@ class RoomViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def create(self, request, pk=None):
-        user = request.user
-        print(request.user)
-        print(request.data)
         serializer = self.get_serializer(data=request.data,
                                          context={'request': request})
         serializer.is_valid()
