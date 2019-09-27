@@ -17,7 +17,7 @@ class RoomViewSet(viewsets.ModelViewSet):
     generate some default routes to model mutations.
     Find out more at: https://www.django-rest-framework.org/api-guide/viewsets/
     """
-    queryset = Room.objects.all()
+    queryset = Room.objects.filter(alive=1).all()
     serializer_class = RoomSerializer
 
     def retrieve(self, request, pk=None):
@@ -25,7 +25,7 @@ class RoomViewSet(viewsets.ModelViewSet):
         Override room retrieval to access by its unique_identifier,
         instead of its primary key (which is its running id.)
         """
-        room = get_object_or_404(Room, unique_identifier=pk)
+        room = get_object_or_404(Room, unique_identifier=pk, alive=1)
         serializer = self.get_serializer(room)
         data = dict(serializer.data)
 
