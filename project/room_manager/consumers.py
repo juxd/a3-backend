@@ -71,8 +71,12 @@ class PlaybackConsumer(WebsocketConsumer):
         payload = data['payload']
 
         ### HANDLING OF CLIENT EVENTS ###
+        # 0. Ping
+        if type == 'ping':
+            return self.pong()
+        
         # 1. Queue Event: Add songs into room's queue
-        if type == 'queueEvent':
+        elif type == 'queueEvent':
             added = self.room.add_songs(payload['songs'])
 
             # Skip sending broadcast if no songs were added to queue
@@ -95,6 +99,12 @@ class PlaybackConsumer(WebsocketConsumer):
                 song = {'id': id, 'votes': self.room.get_vote_count(id)}
                 songs.append(song)
             data = {'type': 'voteCountEvent', 'payload': {'songs': songs}}
+        
+        elif type == 'stopEvent':
+            pass
+
+        else:
+            return
 
         # Propagate message to room channel layer
         async_to_sync(self.channel_layer.group_send)(self.room_group_name,
@@ -119,6 +129,13 @@ class PlaybackConsumer(WebsocketConsumer):
 
     ### HELPER FUNCTIONS ###
 
+    def pong(self):
+        data = {
+            'type': 'pong',
+            'payload': {}
+        }
+        self.send(text_data=json.dumps(data))
+
     def send_initial_data(self):
         self.send_queue()
         self.send_all_user_votes()
@@ -133,7 +150,6 @@ class PlaybackConsumer(WebsocketConsumer):
                 'type': 'all'
             }
         }
-
         self.send(text_data=json.dumps(data))
 
     # Send a user's previous votes
@@ -144,7 +160,7 @@ class PlaybackConsumer(WebsocketConsumer):
         }
         self.send(text_data=json.dumps(data))
 
-    
+    # Confirm a user's vote by sending it back
     def send_user_votes(self, votes):
         data = {
             'type': 'voteActionEvent',
