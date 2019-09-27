@@ -8,12 +8,8 @@ import logging
 from .room import Room
 from .models.room import Room as RoomModel
 
-DEBUG = False
-
-# TODO: Cache this with redis
 # {room_id: <Room Object>}
 ROOMS = {}
-
 
 class PlaybackConsumer(WebsocketConsumer):
     def connect(self):
@@ -65,10 +61,6 @@ class PlaybackConsumer(WebsocketConsumer):
 
         self.room.remove_user(self)
 
-        # TODO: Should we destroy room the moment there are no users?
-        # if (self.room.is_empty()):
-        #     rooms.pop(self.room_id)
-
         # Leave room channel layer
         async_to_sync(self.channel_layer.group_discard)(self.room_group_name,
                                                         self.channel_name)
@@ -93,7 +85,10 @@ class PlaybackConsumer(WebsocketConsumer):
         elif type == 'voteActionEvent':
             valid_votes = self.room.vote_songs(self, payload['votes'])
 
-            # Convert to vote count event
+            # Confirm votes accepted
+            self.send_user_votes(valid_votes)
+
+            # Convert to vote count event to inform room
             songs = []
             for vote in valid_votes:
                 id = vote['id']
@@ -126,7 +121,7 @@ class PlaybackConsumer(WebsocketConsumer):
 
     def send_initial_data(self):
         self.send_queue()
-        self.send_user_votes()
+        self.send_all_user_votes()
         self.send_now_playing()
 
     # Send all songs to a client
@@ -142,10 +137,18 @@ class PlaybackConsumer(WebsocketConsumer):
         self.send(text_data=json.dumps(data))
 
     # Send a user's previous votes
-    def send_user_votes(self):
+    def send_all_user_votes(self):
         data = {
             'type': 'voteActionEvent',
             'payload': { 'votes' : self.room.get_user_votes(self.user_id) }
+        }
+        self.send(text_data=json.dumps(data))
+
+    
+    def send_user_votes(self, votes):
+        data = {
+            'type': 'voteActionEvent',
+            'payload': { 'votes' : votes }
         }
         self.send(text_data=json.dumps(data))
 

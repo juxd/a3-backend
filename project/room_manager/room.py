@@ -14,7 +14,6 @@ from .models.room import Room as RoomModel
 from . import consumers
 from .auth import spotify_api
 
-DEBUG = False
 VOTE_DIRECTION_UP = 'up'
 VOTE_DIRECTION_DOWN = 'down'
 
@@ -34,9 +33,13 @@ class Room:
 
     def remove_user(self, consumer):
         self.user_consumers.remove(consumer)
+        if self.is_zombie(): 
+            consumers.ROOMS.pop(self.room_id)
 
-    def is_empty(self):
-        return len(self.user_consumers) == 0
+    def is_zombie(self):
+        return (len(self.user_consumers) == 0 and 
+                self.now_playing is None and
+                self.queue.get_size() == 0)
 
     # Returns the list of songs added
     def add_songs(self, data):
@@ -49,7 +52,7 @@ class Room:
 
         if self.now_playing is None:
             song_played = self.advance_queue()
-            print("song played ", song_played)
+            logging.debug("song played " + str(song_played.name))
             if song_played is not None:
                 added_songs = [
                     song for song in added_songs
@@ -110,6 +113,7 @@ class Room:
         elif self.queue.is_empty():
             self.now_playing = None
             json_data = {'type': 'playbackEvent', 'payload': {}}
+            if self.is_zombie(): consumers.ROOMS.pop(self.room_id)
 
         else:
             song_played = self.queue.pop()
@@ -205,10 +209,10 @@ class Room:
             # TODO: Send message to frontend to reconnect device
             if response.status_code >= 400:
                 logging.error(response.text)
-                logging.error("User ID: ", user_id)
-                logging.error("Access Token: ", access_token)
-                logging.error("Refresh Token: ", refresh_token)
-                logging.error("Device ID: ", device_id)
+                logging.error("User ID: " + str(user_id))
+                logging.error("Access Token: " + str(access_token))
+                logging.error("Refresh Token: " + str(refresh_token))
+                logging.error("Device ID: " + str(device_id))
                 json_data = {
                     'type': 'stopEvent',
                     'payload': 'disconnect'
@@ -231,31 +235,6 @@ class Room:
             pass
         refresh_response = spotify_api.refresh_token_info(spotify_params)
         return refresh_response['access_token']
-
-
-    # TODO: Flesh this out into a proper flow inside spotify_api
-    #   - Schedule refresh rather than get new token everytime?
-    @classmethod
-    def get_app_token(cls):
-        raw_credentials = '%s:%s' % (settings.CLIENT_ID,
-                                     settings.CLIENT_SECRET)
-        encoded_bytes = base64.b64encode(raw_credentials.encode('utf-8'))
-        encoded_string = str(encoded_bytes, 'utf-8')
-
-        headers = {
-            'Authorization': 'Basic ' + encoded_string,
-        }
-
-        data = {'grant_type': 'client_credentials'}
-
-        response = pyrequests.post('https://accounts.spotify.com/api/token',
-                                   headers=headers,
-                                   data=data)
-        if response.status_code >= 400:
-            raise pyrequests.RequestException('App Authorisation Failed')
-        data = json.loads(response.text)
-        return data['access_token']
-
 
 class RoomQueuedSong:
     @classmethod
@@ -330,3 +309,6 @@ class SongHeap(object):
 
     def get_all_songs(self):
         return [x for (key, x) in self._data]
+
+    def get_size(self):
+        return len(self._data)
